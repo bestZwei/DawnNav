@@ -92,7 +92,7 @@ jobs:
 
       # 按架构各推一个镜像层（无 tag，由 digest 标识），标签在 merge 阶段合并
       - id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: ${{ matrix.platform }}
