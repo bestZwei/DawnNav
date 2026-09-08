@@ -49,7 +49,21 @@ import { Input } from "@/components/ui/input"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
 import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter, checkSiteHealth, getSiteIdsForHealthCheck, getCategorySiteOrder, updateSitesOrder } from "@/lib/actions"
 import { fetchPublicSettings } from "@/lib/client-settings"
+import { getProxiedFaviconUrl, proxyIconUrlIfPossible } from "@/hooks/use-favicon-service"
 import { toast } from "sonner"
+
+// 后台列表图标：与前台一致的智能图标策略。
+// 已配置 iconUrl 的走同源代理（白名单服务，双层缓存）；未配置的按站点域名
+// 走 /api/icon 聚合（favicon.im → bqb.cool → duckduckgo，带 fallback 链），
+// 全部失败时由 img onError 显示占位图形
+function resolveAdminIconSrc(siteUrl: string, iconUrl: string | null): string | null {
+  if (iconUrl) return proxyIconUrlIfPossible(iconUrl)
+  try {
+    return getProxiedFaviconUrl(new URL(siteUrl).hostname)
+  } catch {
+    return null
+  }
+}
 
 interface Site {
   id: string
@@ -1052,10 +1066,10 @@ export default function AdminSitesPage() {
                       {/* 图标 */}
                       <TableCell className="text-center w-20 min-w-[72px]">
                         <div className="flex items-center justify-center">
-                          {site.iconUrl ? (
+                          {resolveAdminIconSrc(site.url, site.iconUrl) ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={site.iconUrl}
+                              src={resolveAdminIconSrc(site.url, site.iconUrl) as string}
                               alt={site.name}
                               className="h-8 w-8 rounded-md object-contain border bg-background p-0.5"
                               onError={(e) => {

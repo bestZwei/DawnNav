@@ -30,7 +30,9 @@ const UPSTREAMS: Record<FaviconServiceKey, (domain: string) => string> = {
   duckduckgo: (domain) => `https://icons.duckduckgo.com/ip3/${domain}.ico`,
 }
 
-const DEFAULT_ORDER: FaviconServiceKey[] = ["favicon-im", "duckduckgo", "bqb-cool"]
+// fallback 顺序：bqb.cool 在 duckduckgo 之前——后者在部分网络环境不可达，
+// 放在前面会让每次 fallback 白等一个 UPSTREAM_TIMEOUT
+const DEFAULT_ORDER: FaviconServiceKey[] = ["favicon-im", "bqb-cool", "duckduckgo"]
 
 const URL_PROXY_WHITELIST = new Set([
   "favicon.im",
@@ -232,8 +234,8 @@ async function fetchUpstream(url: string): Promise<{ body: Uint8Array<ArrayBuffe
 
       const contentType = res.headers.get("content-type") || "image/png"
       if (!contentType.startsWith("image/") && !contentType.includes("octet-stream")) return null
-      // SVG 可内嵌脚本：以本站同源回显会造成存储型 XSS，上游抓到一律拒绝
-      if (contentType.includes("svg")) return null
+      // SVG 允许通过（favicon.im 等上游已转为返回 SVG），但在 toResponse 中
+      // 附加严格 CSP 响应头——SVG 直接导航打开时脚本不可执行，杜绝存储型 XSS
 
       const buffer = new Uint8Array(await res.arrayBuffer())
       if (buffer.byteLength === 0) return null
@@ -313,14 +315,21 @@ function toResponse(entry: CacheEntry): NextResponse {
       },
     })
   }
+  const headers: Record<string, string> = {
+    "Content-Type": entry.contentType,
+    "Cache-Control": "public, max-age=2592000, immutable",
+    ETag: `"${entry.etag}"`,
+    "X-Content-Type-Options": "nosniff",
+  }
+  // SVG 同源回显的 XSS 防护：<img> 引用本就不执行脚本，此头针对「直接打开 URL」
+  // 的导航场景——禁脚本/插件/表单/外链资源，样式保留（favicon 常含内联样式）
+  if (entry.contentType.includes("svg")) {
+    headers["Content-Security-Policy"] =
+      "default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; sandbox"
+  }
   return new NextResponse(new Blob([entry.body]), {
     status: 200,
-    headers: {
-      "Content-Type": entry.contentType,
-      "Cache-Control": "public, max-age=2592000, immutable",
-      ETag: `"${entry.etag}"`,
-      "X-Content-Type-Options": "nosniff",
-    },
+    headers,
   })
 }
 
