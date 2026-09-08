@@ -1,15 +1,23 @@
-// DawnNav fork 自 kenanlabs/nav：更新检查仍对齐上游仓库的 Release
-export const UPSTREAM_REPO = "kenanlabs/nav"
+// DawnNav 独立发版：更新检查基于本仓库（bestZwei/DawnNav）的 Release / Tag。
+// 优先读 Release；仓库未发布 Release 时回退到 tags 中 semver 最大者。
+export const GITHUB_REPO = "bestZwei/DawnNav"
 
-export const RELEASE_API_URL = `https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest`
+// 更新检查 API 基地址：部署环境无法直连 api.github.com 时（部分网络环境超时/被阻断），
+// 可通过 UPDATE_CHECK_BASE_URL 指向原样透传 GitHub API 响应的反代/镜像地址，
+// 例如 https://your-mirror.example.com/api.github.com（末尾不要带斜杠）
+const API_BASE =
+  process.env.UPDATE_CHECK_BASE_URL?.trim().replace(/\/+$/, "") ||
+  "https://api.github.com"
 
-export const RELEASE_PAGE_URL = `https://github.com/${UPSTREAM_REPO}/releases/latest`
+export const RELEASE_API_URL = `${API_BASE}/repos/${GITHUB_REPO}/releases/latest`
 
-export const RELEASES_PAGE_URL = `https://github.com/${UPSTREAM_REPO}/releases`
+export const RELEASE_PAGE_URL = `https://github.com/${GITHUB_REPO}/releases/latest`
 
-export const TAGS_API_URL = `https://api.github.com/repos/${UPSTREAM_REPO}/tags?per_page=100`
+export const RELEASES_PAGE_URL = `https://github.com/${GITHUB_REPO}/releases`
 
-export const REPO_PAGE_URL = `https://github.com/${UPSTREAM_REPO}`
+export const TAGS_API_URL = `${API_BASE}/repos/${GITHUB_REPO}/tags?per_page=100`
+
+export const REPO_PAGE_URL = `https://github.com/${GITHUB_REPO}`
 
 /**
  * 获取当前应用版本。

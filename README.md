@@ -2,7 +2,7 @@
 
 A clean and modern link navigation system built with Next.js 15, Prisma, and shadcn/ui.
 
-> Forked from [kenanlabs/nav](https://github.com/kenanlabs/nav). Upstream releases remain the reference for the built-in update check.
+> Forked from [kenanlabs/nav](https://github.com/kenanlabs/nav). Since v0.8.0, the built-in update check tracks this repository's own releases/tags.
 
 [![GitHub stars](https://img.shields.io/github/stars/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/network/members)
@@ -289,6 +289,7 @@ pm2 save
 | `SESSION_SECRET` | Session signing key (HMAC), falls back to `NEXTAUTH_SECRET` | random string (`openssl rand -base64 32`) | ✅ in production (server refuses to start without it; dev/build fall back to a per-build random key) |
 | `NEXTAUTH_SECRET` | Encryption key (also used as session signing fallback) | random string (`openssl rand -base64 32`) | ❌ (one of the two; Docker generates a fallback) |
 | `NEXTAUTH_URL` | Full app URL | `http://localhost:3000` or `https://your-domain.com` | ❌ (Docker default) |
+| `UPDATE_CHECK_BASE_URL` | Base URL of the GitHub API used by the in-app update check; set to a mirror/proxy that passes through GitHub API responses when `api.github.com` is unreachable from your server | `https://api.github.com` | ❌ |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Initial super admin account: created by the first-run seed; **also honored on existing instances** — at startup, if the email does not exist yet, the account is created as super admin from `ADMIN_PASSWORD` (an existing account with that email keeps its in-database password) | email / strong password | ❌ |
 | `LOGIN_RATE_LIMIT_DISABLED` | Disable login rate limiting entirely (trusted/internal networks) | `true` | ❌ |
 | `LOGIN_RATE_LIMIT_ACCOUNT_MAX` / `_IP_MAX` | Login failure thresholds: per account / per IP (defaults 10 / 30 within a 15-minute window) | number | ❌ |

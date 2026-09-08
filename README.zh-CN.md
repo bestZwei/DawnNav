@@ -2,7 +2,7 @@
 
 一个简洁现代化的网址导航系统，基于 Next.js 15、Prisma 和 shadcn/ui 构建。
 
-> 本项目 fork 自 [kenanlabs/nav](https://github.com/kenanlabs/nav)，内置更新检查仍以上游 Release 为基准。
+> 本项目 fork 自 [kenanlabs/nav](https://github.com/kenanlabs/nav)；自 v0.8.0 起，内置更新检查基于本仓库自身的 Release/Tag。
 
 [![GitHub stars](https://img.shields.io/github/stars/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/network/members)
@@ -289,6 +289,7 @@ pm2 save
 | `SESSION_SECRET` | 后台会话签名密钥（HMAC），未设置时回退 `NEXTAUTH_SECRET` | 随机字符串（`openssl rand -base64 32`） | ❌（未设置时按构建自动生成；设置后镜像重建不丢会话） |
 | `NEXTAUTH_SECRET` | 加密密钥（兼作会话签名回退密钥） | 随机字符串（`openssl rand -base64 32`） | ❌（与 SESSION_SECRET 二选一；Docker 会生成兜底密钥） |
 | `NEXTAUTH_URL` | 应用完整 URL | `http://localhost:3000` 或 `https://your-domain.com` | ❌（Docker 有默认值） |
+| `UPDATE_CHECK_BASE_URL` | 更新检查使用的 GitHub API 基地址；服务器无法直连 `api.github.com` 时，可指向原样透传 GitHub API 响应的反代/镜像 | `https://api.github.com` | ❌ |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | 初始超级管理员账号：首次初始化（seed）时创建；**已运行的实例**上后补设置也有效——启动时若该邮箱不存在会按 `ADMIN_PASSWORD` 自动创建为超管（该邮箱已存在则不覆盖库内密码） | 邮箱 / 强口令 | ❌ |
 | `LOGIN_RATE_LIMIT_DISABLED` | 整体关闭登录限流（内网/可信环境） | `true` | ❌ |
 | `LOGIN_RATE_LIMIT_ACCOUNT_MAX` / `_IP_MAX` | 登录失败阈值：同账号 / 同 IP（默认 10 次 / 30 次，15 分钟窗口） | 数字 | ❌ |
