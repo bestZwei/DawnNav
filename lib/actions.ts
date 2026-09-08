@@ -2859,8 +2859,10 @@ export async function exportData(mode: "workspace" | "full" = "workspace", inclu
           .map(shot => ({
             source: shot.source,
             url: shot.url,
-            data: shot.data,
-            mimeType: shot.mimeType,
+            // includeScreenshotData 为 false 时不查询 data/mimeType，
+            // 通过 in 收窄联合类型（此时仅保留 URL 来源截图，无二进制数据）
+            data: "data" in shot ? shot.data : null,
+            mimeType: "mimeType" in shot ? shot.mimeType : null,
             order: shot.order,
           })),
       })),

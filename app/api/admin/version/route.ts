@@ -4,6 +4,7 @@ import {
   RELEASES_PAGE_URL,
   RELEASE_API_URL,
   TAGS_API_URL,
+  TAGS_PAGE_URL,
   compareSemver,
   getAppVersion,
   isDevVersion,
@@ -74,7 +75,7 @@ async function fetchFromTags(): Promise<LatestVersionInfo | null> {
 
   if (latestTag === null) return null
 
-  return { tag: latestTag, url: RELEASES_PAGE_URL }
+  return { tag: latestTag, url: TAGS_PAGE_URL }
 }
 
 /**

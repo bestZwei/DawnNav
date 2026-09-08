@@ -17,6 +17,8 @@ export const RELEASES_PAGE_URL = `https://github.com/${GITHUB_REPO}/releases`
 
 export const TAGS_API_URL = `${API_BASE}/repos/${GITHUB_REPO}/tags?per_page=100`
 
+export const TAGS_PAGE_URL = `https://github.com/${GITHUB_REPO}/tags`
+
 export const REPO_PAGE_URL = `https://github.com/${GITHUB_REPO}`
 
 /**
