@@ -14,18 +14,7 @@ import { fileURLToPath } from "node:url"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
-function detectMode() {
-  const explicit = (process.env.DB_PROVIDER || "").trim().toLowerCase()
-  if (explicit === "sqlite" || explicit === "postgres") return explicit
-  const pgUrl = (process.env.POSTGRES_URL || process.env.DATABASE_URL || "").trim()
-  return /^postgres(ql)?:\/\//i.test(pgUrl) ? "postgres" : "sqlite"
-}
-
-const argMode = process.argv[2]
-const mode =
-  argMode === "sqlite" || argMode === "postgres" ? argMode : detectMode()
-
-if (mode === "sqlite" && !process.env.SQLITE_URL) {
+if (!process.env.SQLITE_URL) {
   process.env.SQLITE_URL = `file:${path.resolve(
     process.env.SQLITE_PATH || "./data/nav.db"
   )}`
@@ -44,7 +33,7 @@ if (password.length < 6) {
 }
 
 const require = createRequire(import.meta.url)
-const { PrismaClient } = require(path.join(root, "generated", `prisma-${mode}`))
+const { PrismaClient } = require(path.join(root, "generated", "prisma"))
 const bcrypt = require("bcryptjs")
 
 const prisma = new PrismaClient()

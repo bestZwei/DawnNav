@@ -1,14 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// DawnNav 数据库 schema（SQLite 单一数据源）。
+// 表结构变更：修改本文件后执行 npm run db:push 同步（启动时 entrypoint 也会自动同步）。
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma-postgres"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_URL")
+  provider = "sqlite"
+  url      = env("SQLITE_URL")
 }
 
 model Workspace {
@@ -168,7 +168,7 @@ enum AuditAction {
 
 model SystemSettings {
   id               String   @id @default("default") @map("id")
-  siteName         String   @default("Conan Nav") @map("site_name")
+  siteName         String   @default("DawnNav") @map("site_name")
   siteDescription  String   @default("简洁现代化的网址导航系统") @map("site_description")
   siteLogo         String?  @map("site_logo")
   favicon          String?  @map("favicon")

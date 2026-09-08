@@ -45,15 +45,12 @@ jobs:
       # 而应用/seed 经 lib/db-config 按 SQLITE_PATH（cwd 基准）解析，两端基准不同会各写各的库
       - name: Prepare build database
         run: |
-          npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss --skip-generate
+          node scripts/db-sqlite.mjs
           npx tsx prisma/seed.ts full
         env:
-          SQLITE_URL: "file:${{ github.workspace }}/data/nav.db"
           SQLITE_PATH: "${{ github.workspace }}/data/nav.db"
 
-      # SKIP_OPEN_NEXT_BUILD=1：CI 只验证 Next.js 构建，跳过 OpenNext 产物处理
       - name: Build
         run: npm run build
         env:
-          SKIP_OPEN_NEXT_BUILD: "1"
           SQLITE_PATH: "${{ github.workspace }}/data/nav.db"

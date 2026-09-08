@@ -98,9 +98,8 @@
 
 ### 从单管理员版本升级
 
-1. 执行迁移：
-   - PostgreSQL：`npm run db:migrate:deploy`
-   - SQLite（默认）：`npm run db:push`（自动建 AuditLog 表）
+1. 同步表结构：
+   - npm：`npm run db:push`（自动建 AuditLog 表）
    - Docker：`entrypoint.sh` 启动时自动完成
 2. **超管自动补足**：已有账号不会全部改写，但「系统里一个超管都没有」是不可用的中间态，
    因此启动时会做一次性补足——若不存在任何 SUPER_ADMIN，就把**最早创建**的管理员提升为超管
@@ -114,8 +113,6 @@ UPDATE "User" SET "role" = 'ADMIN'      WHERE "email" = 'old-owner@example.com';
 ```
 
 4. 重新登录一次（旧 token 缺少 iat 字段时会被改密吊销逻辑拒绝，属预期行为）。
-
-> PostgreSQL 需 12+：迁移使用 `ALTER TYPE ... ADD VALUE`，低版本不允许在事务块内执行。
 
 ### 超管密码遗失
 

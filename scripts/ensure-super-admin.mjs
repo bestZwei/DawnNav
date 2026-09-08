@@ -15,29 +15,16 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-// 模式判定与 lib/db-config.ts 同语义：显式 DB_PROVIDER 优先，
-// 否则按连接串前缀推断，都没有则回退 SQLite
-function detectMode() {
-  const explicit = (process.env.DB_PROVIDER || '').trim().toLowerCase()
-  if (explicit === 'sqlite' || explicit === 'postgres') return explicit
-  const pgUrl = (process.env.POSTGRES_URL || process.env.DATABASE_URL || '').trim()
-  return /^postgres(ql)?:\/\//i.test(pgUrl) ? 'postgres' : 'sqlite'
-}
-
-const argMode = process.argv[2]
-const mode =
-  argMode === 'sqlite' || argMode === 'postgres' ? argMode : detectMode()
-
 // 独立运行（npm run db:ensure-super-admin）时补默认连接串；
-// Docker 下 entrypoint 已按分支导出 SQLITE_URL / POSTGRES_URL
-if (mode === 'sqlite' && !process.env.SQLITE_URL) {
+// Docker 下 entrypoint 已导出 SQLITE_URL
+if (!process.env.SQLITE_URL) {
   process.env.SQLITE_URL = `file:${path.resolve(
     process.env.SQLITE_PATH || './data/nav.db'
   )}`
 }
 
 const require = createRequire(import.meta.url)
-const { PrismaClient } = require(path.join(root, 'generated', `prisma-${mode}`))
+const { PrismaClient } = require(path.join(root, 'generated', 'prisma'))
 
 const prisma = new PrismaClient()
 

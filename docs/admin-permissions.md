@@ -114,9 +114,8 @@ as a super admin from `ADMIN_PASSWORD`; an existing account with that email keep
 
 ### Upgrading from the single-admin version
 
-1. Run the migration:
-   - PostgreSQL: `npm run db:migrate:deploy`
-   - SQLite (default): `npm run db:push` (creates the `AuditLog` table)
+1. Sync the schema:
+   - npm: `npm run db:push` (creates the `AuditLog` table)
    - Docker: `entrypoint.sh` does this automatically on start
 2. **Super admin is filled in automatically.** Existing accounts are never rewritten wholesale, but a
    system without a single super admin is an unusable intermediate state, so startup performs a
@@ -132,9 +131,6 @@ UPDATE "User" SET "role" = 'ADMIN'      WHERE "email" = 'old-owner@example.com';
 ```
 
 4. Sign in again (old tokens without the `iat` claim are rejected by the revocation check — expected).
-
-> PostgreSQL 12+ is required: the migration uses `ALTER TYPE ... ADD VALUE`, which older versions do
-> not allow inside a transaction block.
 
 ### Lost super admin password
 

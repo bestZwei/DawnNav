@@ -1,9 +1,11 @@
-# Conan Nav
+# DawnNav
 
 A clean and modern link navigation system built with Next.js 15, Prisma, and shadcn/ui.
 
-[![GitHub stars](https://img.shields.io/github/stars/kenanlabs/nav?style=social)](https://github.com/kenanlabs/nav/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/kenanlabs/nav?style=social)](https://github.com/kenanlabs/nav/network/members)
+> Forked from [kenanlabs/nav](https://github.com/kenanlabs/nav). Upstream releases remain the reference for the built-in update check.
+
+[![GitHub stars](https://img.shields.io/github/stars/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/network/members)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
@@ -78,7 +80,7 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 - **UI**: shadcn/ui, Tailwind CSS, Lucide Icons
 - **Charts**: Recharts
 - **Backend**: Next.js Server Actions, Prisma ORM
-- **Database**: SQLite (default, zero-config) / PostgreSQL (optional)
+- **Database**: SQLite (single file, zero-config)
 - **Auth**: Simple cookie-based auth (single admin)
 - **Deployment**: Docker, GitHub Actions CI/CD
 
@@ -87,12 +89,12 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 ### Local Development
 
 ```bash
-# 1. Install dependencies (also generates the dual sqlite/postgres Prisma clients)
+# 1. Install dependencies (also generates the Prisma client via the postinstall hook)
 npm install
 
 # 2. Configure environment variables (optional: SQLite works with zero config)
 cp .env.example .env
-# Edit .env only if you want PostgreSQL instead of the default SQLite
+# Edit .env if needed (e.g. SESSION_SECRET)
 
 # 3. Initialize the SQLite database (auto-seeds basic data)
 npm run db:push  # creates ./data/nav.db with 4 categories + 4 sample sites
@@ -163,9 +165,7 @@ Preview environments can enable the query parameter with `ENABLE_WORKSPACE_PREVI
 
 ### Data Persistence
 
-Workspaces, categories, and sites are persisted in a database. **SQLite is the default storage**: with no PostgreSQL connection configured, the app stores everything in a local SQLite file (`SQLITE_PATH`, default `./data/nav.db` in dev and `/app/data/nav.db` in Docker) — tables and seed data are created automatically on first start, and the file persists across restarts.
-
-Configure `POSTGRES_URL` (or a `postgres://` prefixed `DATABASE_URL`) to switch to PostgreSQL. On Serverless platforms (Vercel / Cloudflare Workers) there is no persistent local filesystem, so an external PostgreSQL (e.g. Neon / Supabase / RDS) is required — local SQLite files are not an option there.
+Workspaces, categories, and sites are persisted in a database. **SQLite is the only storage engine**: the app stores everything in a local SQLite file (`SQLITE_PATH`, default `./data/nav.db` in dev and `/app/data/nav.db` in Docker) — tables and seed data are created automatically on first start, and the file persists across restarts.
 
 ## 📦 Production Deployment
 
@@ -177,8 +177,8 @@ This project ships a complete Docker deployment setup with an optimized multi-st
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/kenanlabs/nav.git
-cd nav
+git clone https://github.com/bestZwei/DawnNav.git
+cd DawnNav
 
 # 2. Configure environment variables
 cp .env.example .env
@@ -197,17 +197,6 @@ docker compose logs -f nav
 - Remote: `http://your-server-ip:3000` or `http://your-domain.com`
 - Admin: `http://localhost:3000/admin` or `http://your-domain.com/admin`
 
-#### Optional: PostgreSQL mode
-
-```bash
-# 1. Enable the postgres profile in .env
-#    DB_PROVIDER=postgres
-#    POSTGRES_PASSWORD=your-database-password-here
-
-# 2. Start with the profile (starts PostgreSQL alongside the app)
-docker compose --profile postgres up -d
-```
-
 #### Environment Variables (Docker)
 
 ```bash
@@ -216,18 +205,11 @@ SESSION_SECRET=your-session-secret-here # session signing key, falls back to NEX
 NEXTAUTH_SECRET=your-nextauth-secret-here
 NEXTAUTH_URL=http://localhost:3000 # use your real domain in production
 
-# Database (all optional — SQLite by default)
-DB_PROVIDER=sqlite # sqlite | postgres; unset = auto-detect from connection strings
-POSTGRES_URL=postgresql://nav:password@postgresql:5432/nav # only needed for PostgreSQL
+# Database (all optional — SQLite with zero config)
 SQLITE_PATH=/app/data/nav.db # SQLite file location (mounted volume)
 
 # Docker config
 PORT=3000
-# PostgreSQL profile only (docker compose --profile postgres):
-POSTGRES_USER=nav
-POSTGRES_PASSWORD=your-database-password-here # required when the postgres profile is enabled
-POSTGRES_DB=nav
-POSTGRES_PORT=5432
 
 # Initial admin account (optional, first seed only)
 ADMIN_EMAIL=admin@example.com
@@ -257,7 +239,7 @@ docker compose down -v
 
 Docker images are built automatically by GitHub Actions and pushed to the GitHub Container Registry:
 
-- **Image**: `ghcr.io/bestzwei/nav-dev:latest`
+- **Image**: `ghcr.io/bestzwei/dawnnav:latest`
 - **Trigger**: Git tag push (format: `v*`) or a manual run from the Actions page
 - **Pre-release checks**: typecheck, i18n consistency, tests; the tag must match the `package.json` version
 - **Result**: multi-arch image (amd64 + arm64, each built on a native runner), pushing `version` / `major.minor` / `latest` tags
@@ -275,8 +257,8 @@ git push --follow-tags
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/kenanlabs/nav.git
-cd nav
+git clone https://github.com/bestZwei/DawnNav.git
+cd DawnNav
 
 # 2. Install dependencies
 npm install
@@ -294,7 +276,7 @@ npm start
 
 # Or manage with PM2
 npm install -g pm2
-pm2 start npm --name "nav" -- start
+pm2 start npm --name "dawnnav" -- start
 pm2 startup  # enable auto-start on boot
 pm2 save
 ```
@@ -303,22 +285,18 @@ pm2 save
 
 | Variable | Description | Example | Required |
 |----------|-------------|---------|----------|
-| `DB_PROVIDER` | Explicit database type: `sqlite` or `postgres`; unset = auto-detect from connection strings | `sqlite` | ❌ |
-| `POSTGRES_URL` | PostgreSQL connection string (highest priority for auto-detection) | `postgresql://user:pass@localhost:5432/nav` | ❌ (PostgreSQL mode only) |
-| `DATABASE_URL` | Legacy compat: a `postgres://` prefixed value is treated as `POSTGRES_URL` | `postgresql://user:pass@host:5432/nav` | ❌ |
 | `SQLITE_PATH` | SQLite database file path (directory and file are created automatically) | `./data/nav.db` | ❌ (default) |
 | `SESSION_SECRET` | Session signing key (HMAC), falls back to `NEXTAUTH_SECRET` | random string (`openssl rand -base64 32`) | ✅ in production (server refuses to start without it; dev/build fall back to a per-build random key) |
 | `NEXTAUTH_SECRET` | Encryption key (also used as session signing fallback) | random string (`openssl rand -base64 32`) | ❌ (one of the two; Docker generates a fallback) |
 | `NEXTAUTH_URL` | Full app URL | `http://localhost:3000` or `https://your-domain.com` | ❌ (Docker default) |
-| `POSTGRES_PASSWORD` | PostgreSQL password for the `postgres` compose profile | random long string | ✅ (postgres profile only) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Initial super admin account: created by the first-run seed; **also honored on existing instances** — at startup, if the email does not exist yet, the account is created as super admin from `ADMIN_PASSWORD` (an existing account with that email keeps its in-database password) | email / strong password | ❌ |
 | `LOGIN_RATE_LIMIT_DISABLED` | Disable login rate limiting entirely (trusted/internal networks) | `true` | ❌ |
 | `LOGIN_RATE_LIMIT_ACCOUNT_MAX` / `_IP_MAX` | Login failure thresholds: per account / per IP (defaults 10 / 30 within a 15-minute window) | number | ❌ |
 | `LOGIN_RATE_LIMIT_LOCK_SECONDS` | Lock duration once triggered (default 300 seconds, fixed — no escalating backoff) | number | ❌ |
 
-**Docker**: configure `SESSION_SECRET` (or `NEXTAUTH_SECRET`); SQLite is used by default with no database config. Add `DB_PROVIDER=postgres` + `POSTGRES_PASSWORD` to switch to the PostgreSQL profile.
+**Docker**: configure `SESSION_SECRET` (or `NEXTAUTH_SECRET`); SQLite needs no database config.
 
-**Local dev**: SQLite works out of the box; set `POSTGRES_URL` only if you prefer a local PostgreSQL instance.
+**Local dev**: SQLite works out of the box — no database setup required.
 
 ## 📁 Project Structure
 
@@ -353,15 +331,14 @@ Versioned automatic database migrations are supported since **v0.0.8**.
 **Docker** (automatic):
 ```bash
 docker compose pull && docker compose up -d
-# entrypoint.sh syncs the SQLite schema (or runs PostgreSQL migrations) automatically
+# entrypoint.sh syncs the SQLite schema automatically
 # ✅ no manual steps needed
 ```
 
 **npm**:
 ```bash
 git pull && npm install && npm start
-# SQLite (default): schema is synced on startup-equivalent via `npm run db:push` if needed
-# PostgreSQL: run `npm run db:migrate:deploy` before starting
+# If the startup logs report missing columns, run `npm run db:push` to sync the schema first
 ```
 
 ### Upgrading to the multi-admin version (SUPER_ADMIN / ADMIN)
@@ -388,7 +365,7 @@ Full details: [Admin Roles & Permissions](docs/admin-permissions.md#upgrading-fr
 
 ### What's the difference between `npm install` and `npm run db:push`?
 
-- **`npm install`**: installs dependencies and generates both Prisma clients (sqlite + postgres) via the postinstall hook; re-run after schema changes
+- **`npm install`**: installs dependencies and generates the Prisma client via the postinstall hook; re-run after schema changes
 - **`npm run db:push`**: creates/syncs the SQLite schema + seeds initial data; needed on first install or when the schema changes
 
 ### Why does the database connection fail?
@@ -398,22 +375,13 @@ Full details: [Admin Roles & Permissions](docs/admin-permissions.md#upgrading-fr
 2. Is `SQLITE_PATH` pointing to a valid location?
 3. Running `node .next/standalone/server.js` directly? Use an absolute `SQLITE_PATH` — the standalone server changes its working directory at startup, so relative paths resolve against `.next/standalone/`
 
-**PostgreSQL**:
-1. Is PostgreSQL running?
-2. Is `POSTGRES_URL` (or `DATABASE_URL`) in `.env` correct?
-3. Are the database username and password correct?
-4. Does the `nav` database exist?
-
 ### How do I reset the admin password?
 
 **Method 1** (recommended): log into the dashboard → click the sidebar avatar → edit profile → change password
 
 **Method 2**: delete the admin from the database, then re-initialize
 ```bash
-# 1. Connect and delete the admin (PostgreSQL)
-psql -h localhost -U nav -d nav -c "DELETE FROM \"User\" WHERE email = 'admin@example.com';"
-
-# 1. Or remove it from the SQLite file (default mode)
+# 1. Remove it from the SQLite file
 sqlite3 ./data/nav.db "DELETE FROM \"User\" WHERE email = 'admin@example.com';"
 
 # 2. Re-initialize the database
@@ -470,19 +438,13 @@ Steps: [Admin Roles & Permissions](docs/admin-permissions.md#lost-super-admin-pa
 docker compose down
 
 # 2. Back up the SQLite data volume (includes all data)
-docker run --rm -v nav_nav-data:/data -v $(pwd):/backup alpine tar czf /backup/nav-data-$(date +%Y%m%d_%H%M%S).tar.gz /data
+docker run --rm -v nav-data:/data -v $(pwd):/backup alpine tar czf /backup/nav-data-$(date +%Y%m%d_%H%M%S).tar.gz /data
 
 # 3. Restart the service
 docker compose up -d
 ```
 
-#### Docker (PostgreSQL profile)
-
-```bash
-docker compose exec postgresql pg_dump -U nav nav > backup_$(date +%Y%m%d_%H%M%S).sql
-```
-
-#### npm (SQLite, default)
+#### npm (SQLite)
 
 ```bash
 # The database is a single file — a plain copy is a complete backup
@@ -493,10 +455,7 @@ cp ./data/nav.db ./backup_$(date +%Y%m%d_%H%M%S).db
 
 ```bash
 # Docker (SQLite): restore the data volume
-docker run --rm -v nav_nav-data:/data -v $(pwd):/backup alpine sh -c "cd / && tar xzf /backup/nav-data-20260121_143000.tar.gz"
-
-# Docker (PostgreSQL profile)
-docker compose exec postgresql psql -U nav nav < backup_20260121_143000.sql
+docker run --rm -v nav-data:/data -v $(pwd):/backup alpine sh -c "cd / && tar xzf /backup/nav-data-20260121_143000.tar.gz"
 
 # npm (SQLite): copy the file back
 cp ./backup_20260121_143000.db ./data/nav.db
@@ -520,13 +479,13 @@ This is useful for data migration and partial recovery.
 
 ## 💡 Related Resources
 
-- 📘 [Full documentation](https://deepwiki.com/kenanlabs/nav)
+- 📘 [Full documentation](https://deepwiki.com/bestZwei/DawnNav)
 - 📬 [Issues](../../issues)
 - 💬 [Discussions](../../discussions)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=kenanlabs/nav&type=date&legend=top-left)](https://www.star-history.com/#kenanlabs/nav&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=bestZwei/DawnNav&type=date&legend=top-left)](https://www.star-history.com/#bestZwei/DawnNav&type=date&legend=top-left)
 
 ## 🤝 Contributing
 

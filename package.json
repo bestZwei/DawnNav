@@ -1,28 +1,22 @@
 {
-  "name": "conan-nav",
+  "name": "dawnnav",
   "version": "0.7.6",
   "private": true,
   "scripts": {
     "dev": "node --max-http-header-size=65536 node_modules/next/dist/bin/next dev -p 3000 -H 0.0.0.0",
     "build": "next build",
-    "postbuild": "node scripts/open-next-postbuild.mjs",
     "start": "node --max-http-header-size=65536 node_modules/next/dist/bin/next start -p 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-i18n.mjs",
     "test": "tsx scripts/verify-bookmarks.ts && tsx scripts/verify-workspace.ts && tsx scripts/domain-verify-selftest.ts && tsx scripts/verify-rate-limit.ts",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "postinstall": "node scripts/generate-prisma.mjs && node scripts/db-bootstrap.mjs",
+    "postinstall": "node scripts/generate-prisma.mjs",
     "db:push": "node scripts/db-sqlite.mjs && npm run db:seed",
-    "db:push:pg": "npx prisma db push --schema prisma/schema.prisma",
-    "db:setup": "node scripts/sync-schemas.mjs && node scripts/db-sqlite.mjs && npm run db:seed:full",
+    "db:setup": "node scripts/db-sqlite.mjs && npm run db:seed:full",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:seed:full": "npx tsx prisma/seed.ts full",
-    "db:migrate:deploy": "npx prisma migrate deploy",
-    "db:migrate:dev": "npx prisma migrate dev",
     "db:ensure-super-admin": "node scripts/ensure-super-admin.mjs",
-    "db:studio": "npx prisma studio --schema prisma/schema.sqlite.prisma"
+    "db:studio": "npx prisma studio"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -71,7 +65,6 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.2",
     "@tailwindcss/container-queries": "^0.1.1",
     "@types/node": "^20",
     "@types/react": "^19",

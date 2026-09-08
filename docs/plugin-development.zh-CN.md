@@ -256,8 +256,9 @@ export async function myAction(data: { /* ... */ }) {
 
 优先复用核心模型（如 Site）。确需新表时：
 
-- `prisma/schema.prisma` 增加模型
-- 新增迁移目录 `prisma/migrations/<ts>_<name>/migration.sql`
+- `prisma/schema.prisma` 增加模型（SQLite 单一 schema）
+- `npm install` 重新生成 Prisma client（postinstall 钩子）
+- `npm run db:push` 同步表结构（生产环境由 `entrypoint.sh` 启动时自动同步）
 - `lib/prisma.ts` 内存 mock 层同步（类型、默认值、create/update 支持）
 
 ---

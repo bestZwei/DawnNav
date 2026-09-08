@@ -1,38 +1,31 @@
 services:
-  # Next.js 应用（默认 SQLite 模式：零外部依赖，数据持久化在 nav-data 卷）
+  # Next.js 应用（SQLite 单文件数据库：零外部依赖，数据持久化在 nav-data 卷）
   nav:
     # 本仓库 CI（.github/workflows/docker-publish.yml）按仓库名构建的镜像
-    image: ghcr.io/bestzwei/nav-dev:latest
+    image: ghcr.io/bestzwei/dawnnav:latest
     container_name: nav
     restart: unless-stopped
     ports:
       - ${PORT:-3000}:3000
     environment:
-      # 数据库模式：默认 sqlite；启用 postgres profile 时改为 DB_PROVIDER=postgres
-      # （显式指定优先级最高，避免拼接的 POSTGRES_URL 默认值误触发推断）
-      DB_PROVIDER: ${DB_PROVIDER:-sqlite}
-      # 指向内置 postgresql 服务（profile 模式默认拼接）或任意外部 PostgreSQL
-      POSTGRES_URL: ${POSTGRES_URL:-postgresql://${POSTGRES_USER:-nav}:${POSTGRES_PASSWORD:-nav}@postgresql:5432/${POSTGRES_DB:-nav}}
       # SQLite 数据文件（挂载 nav-data 卷持久化）
       SQLITE_PATH: /app/data/nav.db
       # 会话签名密钥，未设置时回退 NEXTAUTH_SECRET
       SESSION_SECRET: ${SESSION_SECRET:-${NEXTAUTH_SECRET}}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      # 初始管理员账号（仅首次 seed 生效）：compose 的 .env 只做变量替换，
-      # 不注入容器环境，必须显式透传才能被容器内的 seed 脚本读到
+      # 初始管理员账号（仅首次 seed 生效；已运行实例上后补设置也会在启动时对齐创建）：
+      # compose 的 .env 只做变量替换，不注入容器环境，必须显式透传才能被容器内脚本读到
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       # JSON 导入文件大小上限（MB），默认 10；大数据量备份导入可放宽，如 MAX_IMPORT_MB=200
       MAX_IMPORT_MB: ${MAX_IMPORT_MB:-10}
       NODE_ENV: production
     volumes:
-      # SQLite 数据库持久化：默认模式下全部业务数据都在这里
+      # SQLite 数据库持久化：全部业务数据都在这里（备份即备份该卷）
       - nav-data:/app/data
       # 会话密钥兜底文件持久化：未配置 SESSION_SECRET 时，重启/换镜像不会导致全部会话失效
       - nav-session-data:/app/.session-data
-    networks:
-      - network
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
       interval: 30s
@@ -40,42 +33,11 @@ services:
       retries: 3
       start_period: 40s
 
-  # 可选 PostgreSQL（docker compose --profile postgres up 启用）：
-  # 需在 .env 设置 DB_PROVIDER=postgres 与 POSTGRES_PASSWORD，
-  # POSTGRES_URL 默认拼接指向本服务；也可指向外部数据库（Neon / Supabase / RDS）
-  postgresql:
-    profiles: ["postgres"]
-    image: postgres:15-alpine
-    container_name: nav-postgresql
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-nav}
-      # 密码必填：公开仓库里的默认密码等于全网皆知，必须由 .env 显式提供
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?启用 postgres profile 时请在 .env 中设置 POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-nav}
-    volumes:
-      - postgresql-data:/var/lib/postgresql/data
-    ports:
-      # 仅绑定本机回环：数据库无需暴露到所有网卡，应用经内部网络访问
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nav}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - network
-    # 启动顺序由 nav 的 entrypoint 就绪重试兜底（30 次 × 10 秒），
-    # 不使用 depends_on：默认（无 profile）模式下引用未激活服务会导致 compose 报错
-
 volumes:
-  postgresql-data:
-    driver: local
+  # 显式固定卷名：不随 compose 项目名（目录名）变化，备份/恢复命令可直接引用
   nav-data:
     driver: local
+    name: nav-data
   nav-session-data:
     driver: local
-
-networks:
-  network:
-    driver: bridge
+    name: nav-session-data

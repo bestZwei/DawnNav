@@ -10,7 +10,7 @@ ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
 ENV NEXT_PUBLIC_GIT_SHA=${GIT_SHA}
 
 # 复制 package 文件和 Prisma schema
-# scripts/ 必须在 npm ci 前就位：postinstall 钩子引用其中的 generate-prisma / db-bootstrap
+# scripts/ 必须在 npm ci 前就位：postinstall 钩子引用其中的 generate-prisma
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 COPY scripts ./scripts
@@ -23,8 +23,8 @@ RUN npm ci && \
 COPY . .
 
 # 构建期数据库供给：静态预渲染页面需要可查询的数据库。
-# 默认 SQLite 模式，先建表并填充种子数据（产物仅存在于构建层，不进入 runner）
-RUN SQLITE_URL="file:/app/data/nav.db" npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss --skip-generate && \
+# 先建表并填充种子数据（产物仅存在于构建层，不进入 runner）
+RUN SQLITE_PATH=/app/data/nav.db node scripts/db-sqlite.mjs && \
     SQLITE_PATH=/app/data/nav.db npx tsx prisma/seed.ts full
 
 # 打包 runner 所需 node_modules 闭包（prisma CLI / tsx / bcryptjs 及其依赖树，
@@ -32,9 +32,6 @@ RUN SQLITE_URL="file:/app/data/nav.db" npx prisma db push --schema prisma/schema
 RUN node scripts/pack-runner-deps.mjs
 
 # 构建
-# SKIP_OPEN_NEXT_BUILD：Docker 只需要 Next standalone 产物，
-# postbuild 钩子的 OpenNext（Cloudflare Workers）打包在此属双倍构建时间
-ENV SKIP_OPEN_NEXT_BUILD=1
 RUN npm run build
 
 
@@ -72,7 +69,7 @@ COPY --from=builder /app/scripts ./scripts
 # scripts/pack-runner-deps.mjs 在 builder 阶段动态计算打包）
 COPY --from=builder /app/.runner-node-modules ./node_modules
 
-# 双数据库客户端（默认 sqlite / 可选 postgres，由 entrypoint.sh 按环境变量选择）
+# Prisma client（SQLite）与其 query engine 二进制
 COPY --from=builder /app/generated ./generated
 
 # 复制构建产物
@@ -87,7 +84,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/entrypoint.sh ./entrypoint.sh
 RUN mkdir -p /app/.session-data && chown -R nextjs:nodejs /app/.session-data
 ENV SESSION_SECRET_FILE=/app/.session-data/.session-secret
 
-# SQLite 默认数据目录：默认模式的数据持久化位置，配合 compose 挂载 nav-data 卷
+# SQLite 数据目录：数据持久化位置，配合 compose 挂载 nav-data 卷
 RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
 ENV SQLITE_PATH=/app/data/nav.db
 

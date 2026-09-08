@@ -1,9 +1,11 @@
-# Conan Nav
+# DawnNav
 
 一个简洁现代化的网址导航系统，基于 Next.js 15、Prisma 和 shadcn/ui 构建。
 
-[![GitHub stars](https://img.shields.io/github/stars/kenanlabs/nav?style=social)](https://github.com/kenanlabs/nav/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/kenanlabs/nav?style=social)](https://github.com/kenanlabs/nav/network/members)
+> 本项目 fork 自 [kenanlabs/nav](https://github.com/kenanlabs/nav)，内置更新检查仍以上游 Release 为基准。
+
+[![GitHub stars](https://img.shields.io/github/stars/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/bestZwei/DawnNav?style=social)](https://github.com/bestZwei/DawnNav/network/members)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
@@ -79,7 +81,7 @@
 - **UI**: shadcn/ui、Tailwind CSS、Lucide Icons
 - **图表**: Recharts
 - **后端**: Next.js Server Actions、Prisma ORM
-- **数据库**: SQLite（默认，零配置）/ PostgreSQL（可选）
+- **数据库**: SQLite（单文件，零配置）
 - **认证**: 简单 Cookie 认证（单管理员）
 - **部署**: Docker、GitHub Actions CI/CD
 
@@ -88,12 +90,12 @@
 ### 本地开发
 
 ```bash
-# 1. 安装依赖（postinstall 会自动生成 sqlite/postgres 双 Prisma client）
+# 1. 安装依赖（postinstall 会自动生成 Prisma client）
 npm install
 
 # 2. 配置环境变量（可选：SQLite 模式零配置即可用）
 cp .env.example .env
-# 仅在需要改用 PostgreSQL 时才需编辑 .env 配置连接参数
+# 按需编辑 .env（如 SESSION_SECRET）
 
 # 3. 初始化 SQLite 数据库（会自动填充基础数据）
 npm run db:push  # 创建 ./data/nav.db，含 4 个分类 + 4 个示例网站
@@ -164,9 +166,7 @@ curl -H "Host: zh.example.com" http://localhost:3000/
 
 ### 数据持久化说明
 
-工作区、分类、网址等全部数据持久化在数据库中。**默认使用 SQLite 存储**：未配置 PostgreSQL 连接参数时，数据保存在本地 SQLite 文件中（`SQLITE_PATH`，本地开发默认 `./data/nav.db`，Docker 内为 `/app/data/nav.db`），首次启动自动建表并写入种子数据，重启后数据保留。
-
-配置 `POSTGRES_URL`（或 `postgres://` 前缀的 `DATABASE_URL`）即可切换为 PostgreSQL。Serverless 平台（Vercel / Cloudflare Workers）没有可持久化的本地文件系统，必须配置外部 PostgreSQL（如 Neon / Supabase / RDS），本地 SQLite 文件在该场景下无法使用。
+工作区、分类、网址等全部数据持久化在数据库中。**SQLite 是唯一存储引擎**：数据保存在本地 SQLite 文件中（`SQLITE_PATH`，本地开发默认 `./data/nav.db`，Docker 内为 `/app/data/nav.db`），首次启动自动建表并写入种子数据，重启后数据保留。
 
 ## 📦 生产部署
 
@@ -178,8 +178,8 @@ curl -H "Host: zh.example.com" http://localhost:3000/
 
 ```bash
 # 1. 克隆代码
-git clone https://github.com/kenanlabs/nav.git
-cd nav
+git clone https://github.com/bestZwei/DawnNav.git
+cd DawnNav
 
 # 2. 配置环境变量
 cp .env.example .env
@@ -198,17 +198,6 @@ docker compose logs -f nav
 - 远程：`http://你的服务器IP:3000` 或 `http://你的域名.com`
 - 后台：`http://localhost:3000/admin` 或 `http://你的域名.com/admin`
 
-#### 可选：切换 PostgreSQL 模式
-
-```bash
-# 1. 在 .env 中启用 postgres profile 所需变量
-#    DB_PROVIDER=postgres
-#    POSTGRES_PASSWORD=your-database-password-here
-
-# 2. 带 profile 启动（同时拉起 PostgreSQL 与应用）
-docker compose --profile postgres up -d
-```
-
 #### 环境变量（Docker 部署）
 
 ```bash
@@ -217,18 +206,11 @@ SESSION_SECRET=your-session-secret-here # 会话签名密钥，未设置时回�
 NEXTAUTH_SECRET=your-nextauth-secret-here
 NEXTAUTH_URL=http://localhost:3000 # 生产环境填写实际域名
 
-# 数据库配置（全部可选——默认 SQLite，无需任何配置）
-DB_PROVIDER=sqlite # sqlite | postgres；未设置时按连接参数自动推断
-POSTGRES_URL=postgresql://nav:password@postgresql:5432/nav # 仅 PostgreSQL 模式需要
+# 数据库配置（全部可选——SQLite 零配置）
 SQLITE_PATH=/app/data/nav.db # SQLite 数据文件位置（挂载卷内）
 
 # Docker 配置
 PORT=3000
-# 仅 postgres profile 模式（docker compose --profile postgres）：
-POSTGRES_USER=nav
-POSTGRES_PASSWORD=your-database-password-here # 启用 postgres profile 时必填
-POSTGRES_DB=nav
-POSTGRES_PORT=5432
 
 # 初始管理员账号（可选，仅首次 seed 生效）
 ADMIN_EMAIL=admin@example.com
@@ -258,7 +240,7 @@ docker compose down -v
 
 本项目使用 GitHub Actions 自动构建 Docker 镜像，推送到 GitHub Container Registry：
 
-- **镜像地址**: `ghcr.io/bestzwei/nav-dev:latest`
+- **镜像地址**: `ghcr.io/bestzwei/dawnnav:latest`
 - **触发条件**: Git tag 推送（格式：`v*`）或 Actions 页面手动触发
 - **发布前校验**: 类型检查、i18n 一致性、测试，且 tag 必须与 `package.json` 版本一致
 - **构建结果**: 多架构镜像（amd64 + arm64，各自原生 runner 构建），推送 `version` / `major.minor` / `latest` 标签
@@ -275,8 +257,8 @@ git push --follow-tags
 
 ```bash
 # 1. 克隆代码
-git clone https://github.com/kenanlabs/nav.git
-cd nav
+git clone https://github.com/bestZwei/DawnNav.git
+cd DawnNav
 
 # 2. 安装依赖
 npm install
@@ -294,7 +276,7 @@ npm start
 
 # 或使用 PM2 管理
 npm install -g pm2
-pm2 start npm --name "nav" -- start
+pm2 start npm --name "dawnnav" -- start
 pm2 startup  # 设置开机自启
 pm2 save
 ```
@@ -303,22 +285,18 @@ pm2 save
 
 | 变量名 | 说明 | 示例 | 必填 |
 |--------|------|------|------|
-| `DB_PROVIDER` | 显式指定数据库类型：`sqlite` 或 `postgres`；未设置时按连接参数自动推断 | `sqlite` | ❌ |
-| `POSTGRES_URL` | PostgreSQL 连接串（自动推断的最高优先来源） | `postgresql://user:pass@localhost:5432/nav` | ❌（仅 PostgreSQL 模式） |
-| `DATABASE_URL` | 旧版兼容：值为 `postgres://` 前缀时等同 `POSTGRES_URL` | `postgresql://user:pass@host:5432/nav` | ❌ |
 | `SQLITE_PATH` | SQLite 数据库文件路径（目录与文件自动创建） | `./data/nav.db` | ❌（有默认值） |
 | `SESSION_SECRET` | 后台会话签名密钥（HMAC），未设置时回退 `NEXTAUTH_SECRET` | 随机字符串（`openssl rand -base64 32`） | ❌（未设置时按构建自动生成；设置后镜像重建不丢会话） |
 | `NEXTAUTH_SECRET` | 加密密钥（兼作会话签名回退密钥） | 随机字符串（`openssl rand -base64 32`） | ❌（与 SESSION_SECRET 二选一；Docker 会生成兜底密钥） |
 | `NEXTAUTH_URL` | 应用完整 URL | `http://localhost:3000` 或 `https://your-domain.com` | ❌（Docker 有默认值） |
-| `POSTGRES_PASSWORD` | `postgres` compose profile 的 PostgreSQL 密码 | 随机长字符串 | ✅（仅 postgres profile） |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | 初始超级管理员账号：首次初始化（seed）时创建；**已运行的实例**上后补设置也有效——启动时若该邮箱不存在会按 `ADMIN_PASSWORD` 自动创建为超管（该邮箱已存在则不覆盖库内密码） | 邮箱 / 强口令 | ❌ |
 | `LOGIN_RATE_LIMIT_DISABLED` | 整体关闭登录限流（内网/可信环境） | `true` | ❌ |
 | `LOGIN_RATE_LIMIT_ACCOUNT_MAX` / `_IP_MAX` | 登录失败阈值：同账号 / 同 IP（默认 10 次 / 30 次，15 分钟窗口） | 数字 | ❌ |
 | `LOGIN_RATE_LIMIT_LOCK_SECONDS` | 触发锁定时长（默认 300 秒，固定时长无递增退避） | 数字 | ❌ |
 
-**Docker 部署**：配置 `SESSION_SECRET`（或 `NEXTAUTH_SECRET`）即可，数据库默认 SQLite 零配置；需要 PostgreSQL 时设置 `DB_PROVIDER=postgres` 与 `POSTGRES_PASSWORD` 并启用 postgres profile。
+**Docker 部署**：配置 `SESSION_SECRET`（或 `NEXTAUTH_SECRET`）即可，SQLite 零配置。
 
-**本地开发**：SQLite 开箱即用；如偏好本地 PostgreSQL，设置 `POSTGRES_URL` 即可。
+**本地开发**：SQLite 开箱即用，无需任何数据库配置。
 
 ## 📁 项目结构
 
@@ -353,15 +331,14 @@ pm2 save
 **Docker**（自动）：
 ```bash
 docker compose pull && docker compose up -d
-# entrypoint.sh 自动同步 SQLite 表结构（PostgreSQL 模式则执行数据库迁移）
+# entrypoint.sh 自动同步 SQLite 表结构
 # ✅ 无需手动操作，安全可靠
 ```
 
 **npm**：
 ```bash
 git pull && npm install && npm start
-# SQLite（默认）：如启动报字段缺失，先执行 npm run db:push 同步表结构
-# PostgreSQL：启动前执行 npm run db:migrate:deploy
+# 如启动报字段缺失，先执行 npm run db:push 同步表结构
 ```
 
 ### 升级到多管理员版本（SUPER_ADMIN / ADMIN）
@@ -387,7 +364,7 @@ UPDATE "User" SET "role" = 'ADMIN'      WHERE "email" = 'old-owner@example.com';
 
 ### npx prisma generate 和 npm run db:push 的区别？
 
-- **`npm install`**：安装依赖并经 postinstall 钩子生成 sqlite/postgres 双 Prisma client，schema 变化后重跑即可
+- **`npm install`**：安装依赖并经 postinstall 钩子生成 Prisma client，schema 变化后重跑即可
 - **`npm run db:push`**：创建/同步 SQLite 表结构 + 填充初始数据，首次安装或 schema 变化时需要
 
 ### 为什么数据库连接失败？
@@ -397,22 +374,13 @@ UPDATE "User" SET "role" = 'ADMIN'      WHERE "email" = 'old-owner@example.com';
 2. `SQLITE_PATH` 是否指向有效位置
 3. 直接运行 `node .next/standalone/server.js` 时请使用绝对路径——standalone 服务启动时会切换工作目录，相对路径会解析到 `.next/standalone/` 下
 
-**PostgreSQL**：
-1. PostgreSQL 服务是否启动
-2. `.env` 文件中的 `POSTGRES_URL`（或 `DATABASE_URL`）是否正确
-3. 数据库用户名和密码是否正确
-4. 数据库 `nav` 是否已创建
-
 ### 如何重置管理员密码？
 
 **方法 1**（推荐）：登录后台 → 点击侧边栏头像 → 编辑资料 → 修改密码
 
 **方法 2**：连接数据库删除管理员后重新初始化
 ```bash
-# 1. 删除管理员（PostgreSQL）
-psql -h localhost -U nav -d nav -c "DELETE FROM \"User\" WHERE email = 'admin@example.com';"
-
-# 或从 SQLite 文件中删除（默认模式）
+# 1. 从 SQLite 文件中删除
 sqlite3 ./data/nav.db "DELETE FROM \"User\" WHERE email = 'admin@example.com';"
 
 # 2. 重新初始化数据库
@@ -466,19 +434,13 @@ npm run db:push
 docker compose down
 
 # 2. 备份 SQLite 数据卷（包含所有数据）
-docker run --rm -v nav_nav-data:/data -v $(pwd):/backup alpine tar czf /backup/nav-data-$(date +%Y%m%d_%H%M%S).tar.gz /data
+docker run --rm -v nav-data:/data -v $(pwd):/backup alpine tar czf /backup/nav-data-$(date +%Y%m%d_%H%M%S).tar.gz /data
 
 # 3. 重新启动服务
 docker compose up -d
 ```
 
-#### Docker 环境（PostgreSQL profile）
-
-```bash
-docker compose exec postgresql pg_dump -U nav nav > backup_$(date +%Y%m%d_%H%M%S).sql
-```
-
-#### npm 环境（SQLite，默认）
+#### npm 环境（SQLite）
 
 ```bash
 # 数据库是单个文件——直接复制即完成备份
@@ -489,10 +451,7 @@ cp ./data/nav.db ./backup_$(date +%Y%m%d_%H%M%S).db
 
 ```bash
 # Docker（SQLite）：恢复数据卷
-docker run --rm -v nav_nav-data:/data -v $(pwd):/backup alpine sh -c "cd / && tar xzf /backup/nav-data-20260121_143000.tar.gz"
-
-# Docker（PostgreSQL profile）
-docker compose exec postgresql psql -U nav nav < backup_20260121_143000.sql
+docker run --rm -v nav-data:/data -v $(pwd):/backup alpine sh -c "cd / && tar xzf /backup/nav-data-20260121_143000.tar.gz"
 
 # npm（SQLite）：复制回数据文件
 cp ./backup_20260121_143000.db ./data/nav.db
@@ -516,13 +475,13 @@ cp ./backup_20260121_143000.db ./data/nav.db
 
 ## 💡 相关资源
 
-- 📘 [完整文档](https://deepwiki.com/kenanlabs/nav)
+- 📘 [完整文档](https://deepwiki.com/bestZwei/DawnNav)
 - 📬 [问题反馈](../../issues)
 - 💬 [讨论区](../../discussions)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=kenanlabs/nav&type=date&legend=top-left)](https://www.star-history.com/#kenanlabs/nav&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=bestZwei/DawnNav&type=date&legend=top-left)](https://www.star-history.com/#bestZwei/DawnNav&type=date&legend=top-left)
 
 ## 🤝 贡献
 

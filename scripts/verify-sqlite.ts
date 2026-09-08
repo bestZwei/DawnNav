@@ -1,13 +1,8 @@
-// SQLite 模式冒烟验证：确认默认回退路径（未配置 PostgreSQL 参数）下
-// 数据库可读写、seed 数据完整。前置条件：已执行 npm run db:setup（建表 + seed）。
-import { prisma, dbProvider, dbConfig } from "../lib/prisma"
+// SQLite 冒烟验证：确认数据库可读写、seed 数据完整。
+// 前置条件：已执行 npm run db:setup（建表 + seed）。
+import { prisma, dbConfig } from "../lib/prisma"
 
 async function main() {
-  if (dbProvider !== "sqlite") {
-    console.error(`当前为 ${dbProvider} 模式（${dbConfig.url}），本脚本仅适用于 sqlite 模式验证`)
-    process.exit(1)
-  }
-
   const failures: string[] = []
 
   const userCount = await prisma.user.count()
