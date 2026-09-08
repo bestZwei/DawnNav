@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
-        'Content-Disposition': `attachment; filename="nav_${suffix}_${new Date().toISOString().split('T')[0]}.json"`,
+        'Content-Disposition': `attachment; filename="dawnnav_${suffix}_${new Date().toISOString().split('T')[0]}.json"`,
       },
     })
   } catch (error) {

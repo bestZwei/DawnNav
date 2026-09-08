@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Upload, AlertTriangle, Loader2 } from "lucide-react"
+import { Upload, AlertTriangle, Loader2, FileSearch } from "lucide-react"
 import { toast } from "sonner"
 import { importBookmarks } from "@/lib/actions"
 import { useTranslations } from "next-intl"
@@ -31,6 +31,46 @@ import { resolveActionError } from "@/lib/action-error"
 interface ImportBookmarksDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+}
+
+// 文件类型识别结果：选择 JSON 后立即解析结构，让用户在导入前明确
+// 这份数据是「网址数据（当前工作区）」还是「全站备份（全部工作区）」
+type Detection =
+  | { kind: 'full'; workspaces: number; categories: number; sites: number; hasSettings: boolean }
+  | { kind: 'workspace'; categories: number; sites: number }
+  | { kind: 'invalid' }
+  | { kind: 'parseError' }
+
+const countSites = (categories: any[]) =>
+  categories.reduce(
+    (n, c) => n + (Array.isArray(c?.sites) ? c.sites.length : 0),
+    0
+  )
+
+function detectJson(json: unknown): Detection {
+  if (json && typeof json === 'object' && Array.isArray((json as any).workspaces)) {
+    const workspaces = (json as any).workspaces
+    const categories = workspaces.reduce(
+      (n: number, w: any) => n + (Array.isArray(w?.categories) ? w.categories.length : 0),
+      0
+    )
+    const sites = workspaces.reduce(
+      (n: number, w: any) =>
+        n + (Array.isArray(w?.categories) ? countSites(w.categories) : 0),
+      0
+    )
+    return {
+      kind: 'full',
+      workspaces: workspaces.length,
+      categories,
+      sites,
+      hasSettings: Boolean((json as any).settings),
+    }
+  }
+  if (Array.isArray(json)) {
+    return { kind: 'workspace', categories: json.length, sites: countSites(json) }
+  }
+  return { kind: 'invalid' }
 }
 
 export function ImportBookmarksDialog({
@@ -43,11 +83,16 @@ export function ImportBookmarksDialog({
   const tAE = useTranslations("actionErrors")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [detection, setDetection] = useState<Detection | null>(null)
   const [importMode, setImportMode] = useState<'overwrite' | 'append'>('append')
   const [isImporting, setIsImporting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 结构无法识别 / JSON 解析失败时禁止导入，避免把必然失败的请求发到后端
+  const isInvalidFile =
+    detection?.kind === 'invalid' || detection?.kind === 'parseError'
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // 验证文件类型
@@ -61,6 +106,17 @@ export function ImportBookmarksDialog({
         return
       }
       setSelectedFile(file)
+
+      // JSON：解析结构给出类型提示（网址数据 vs 全站备份）
+      if (isJson) {
+        try {
+          setDetection(detectJson(JSON.parse(await file.text())))
+        } catch {
+          setDetection({ kind: 'parseError' })
+        }
+      } else {
+        setDetection(null)
+      }
     }
   }
 
@@ -116,6 +172,7 @@ export function ImportBookmarksDialog({
           description: result.message,
         })
         setSelectedFile(null)
+        setDetection(null)
         if (fileInputRef.current) {
           fileInputRef.current.value = ''
         }
@@ -188,6 +245,48 @@ export function ImportBookmarksDialog({
                 </Button>
               </label>
             </div>
+
+            {/* 文件类型识别：导入前明确数据归属（当前工作区 or 全部工作区） */}
+            {detection && (
+              <Alert
+                variant={
+                  detection.kind === 'invalid' || detection.kind === 'parseError'
+                    ? 'destructive'
+                    : 'default'
+                }
+              >
+                <FileSearch className="h-4 w-4" />
+                <AlertTitle className="font-semibold">{t("detectTitle")}</AlertTitle>
+                <AlertDescription className="mt-1 text-sm">
+                  {detection.kind === 'full' && (
+                    <>
+                      <p>
+                        {t("detectFull", {
+                          workspaces: detection.workspaces,
+                          categories: detection.categories,
+                          sites: detection.sites,
+                        })}
+                      </p>
+                      {detection.hasSettings && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("detectFullSettings")}
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {detection.kind === 'workspace' && (
+                    <p>
+                      {t("detectWorkspace", {
+                        categories: detection.categories,
+                        sites: detection.sites,
+                      })}
+                    </p>
+                  )}
+                  {detection.kind === 'invalid' && <p>{t("detectInvalid")}</p>}
+                  {detection.kind === 'parseError' && <p>{t("detectParseError")}</p>}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* 导入模式选择 */}
             <div className="space-y-3">
@@ -297,7 +396,7 @@ export function ImportBookmarksDialog({
             </Button>
             <Button
               onClick={handleImport}
-              disabled={!selectedFile || isImporting}
+              disabled={!selectedFile || isImporting || isInvalidFile}
             >
               {isImporting ? (
                 <>
@@ -332,6 +431,7 @@ export function ImportBookmarksDialog({
               <li>{t("deleteSites")}</li>
               <li>{t("deleteCategories")}</li>
               <li>{t("deleteVisits")}</li>
+              {detection?.kind === 'full' && <li>{t("confirmOverwriteFull")}</li>}
               <li>{t("irreversibleItemPre")}<span className="font-semibold">{t("irreversibleItem")}</span></li>
             </ul>
             <div className="text-sm font-medium pt-2">

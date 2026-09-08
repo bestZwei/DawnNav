@@ -1334,7 +1334,7 @@ export async function checkScreenshotUploadCapability() {
         update: {},
         create: {
           id: 'default',
-          footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+          footerCopyright: `© ${new Date().getFullYear()} DawnNav. All rights reserved.`,
         },
       })
       // 同值写入：验证写权限且不改变任何数据
@@ -2546,7 +2546,7 @@ export async function getAboutPage() {
   return {
     enabled: aboutEnabled,
     siteName:
-      workspace.siteName || (settings?.siteName ?? "Conan Nav"),
+      workspace.siteName || (settings?.siteName ?? "DawnNav"),
     content: workspace.aboutContent || settings?.aboutContent || "",
   }
 }
@@ -2675,7 +2675,7 @@ export async function updateSystemSettings(data: {
       settings = await prisma.systemSettings.create({
         data: {
           ...allowed,
-          footerCopyright: allowed.footerCopyright || `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+          footerCopyright: allowed.footerCopyright || `© ${new Date().getFullYear()} DawnNav. All rights reserved.`,
         },
       })
     } else {
@@ -2712,30 +2712,57 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
   if (unauthorized) return unauthorized
   try {
     if (mode === "full") {
-      const workspaces = await prisma.workspace.findMany({
-        orderBy: { order: 'asc' },
-        include: { domains: true },
-      })
-      const categories = await prisma.category.findMany({
-        orderBy: { order: 'asc' },
-        include: {
-          sites: {
-            orderBy: { order: 'asc' },
-            include: {
-              screenshots: {
-                orderBy: { order: 'asc' },
-                select: { source: true, url: true, data: true, mimeType: true, order: true },
+      const [workspaces, categories, settings] = await Promise.all([
+        prisma.workspace.findMany({
+          orderBy: { order: 'asc' },
+          include: { domains: true },
+        }),
+        prisma.category.findMany({
+          orderBy: { order: 'asc' },
+          include: {
+            sites: {
+              orderBy: { order: 'asc' },
+              include: {
+                screenshots: {
+                  orderBy: { order: 'asc' },
+                  select: { source: true, url: true, data: true, mimeType: true, order: true },
+                },
               },
             },
           },
-        },
-      })
+        }),
+        prisma.systemSettings.findFirst(),
+      ])
 
       return {
         success: true,
         data: {
           format: "nav-full-backup",
-          version: 2,
+          // v3：新增 settings（系统设置）与 exportedAt 元数据；v2 备份仍可导入（settings 缺省跳过还原）
+          version: 3,
+          exportedAt: new Date().toISOString(),
+          settings: settings
+            ? {
+                siteName: settings.siteName,
+                siteDescription: settings.siteDescription,
+                siteLogo: settings.siteLogo,
+                favicon: settings.favicon,
+                pageSize: settings.pageSize,
+                showFooter: settings.showFooter,
+                footerCopyright: settings.footerCopyright,
+                footerLinks: settings.footerLinks,
+                showAdminLink: settings.showAdminLink,
+                showIcp: settings.showIcp,
+                icpNumber: settings.icpNumber,
+                icpLink: settings.icpLink,
+                aboutContent: settings.aboutContent,
+                githubUrl: settings.githubUrl,
+                defaultLanguage: settings.defaultLanguage,
+                customHeadCode: settings.customHeadCode,
+                customBodyCode: settings.customBodyCode,
+                enableAnimations: settings.enableAnimations,
+              }
+            : undefined,
           workspaces: workspaces.map((ws: any) => ({
             slug: ws.slug,
             name: ws.name,
@@ -3179,9 +3206,13 @@ export async function importData(
   }
 }
 
-// 全量备份导入：按 slug upsert 工作区；域名冲突（已绑其他工作区）跳过并计数
+// 全量备份导入：按 slug upsert 工作区；域名冲突（已绑其他工作区）跳过并计数；
+// v3 备份带 settings 时，overwrite 模式下还原系统设置
 async function importFullBackup(
-  backup: { workspaces: Array<Record<string, any>> },
+  backup: {
+    workspaces: Array<Record<string, any>>
+    settings?: Record<string, unknown>
+  },
   mode: 'overwrite' | 'append'
 ) {
   let importedWorkspaces = 0
@@ -3328,11 +3359,43 @@ async function importFullBackup(
     }
   }
 
+  // 系统设置还原（v3 备份，仅 overwrite 模式执行；append 不动现有设置）：
+  // 复用 updateSystemSettings 的白名单 + zod 校验 + URL 协议检查，
+  // 校验失败仅告警跳过设置还原，不阻断已导入的工作区数据
+  let settingsRestored = false
+  if (
+    mode === 'overwrite' &&
+    backup.settings &&
+    typeof backup.settings === 'object' &&
+    !Array.isArray(backup.settings)
+  ) {
+    const settingsInput: Record<string, unknown> = { ...backup.settings }
+    // 语言精简前的备份可能带 zh/en 之外的默认语言，剔除后还原其余字段
+    if (
+      typeof settingsInput.defaultLanguage === 'string' &&
+      !isLocale(settingsInput.defaultLanguage)
+    ) {
+      delete settingsInput.defaultLanguage
+    }
+    const settingsResult = await updateSystemSettings(
+      settingsInput as Parameters<typeof updateSystemSettings>[0]
+    )
+    if (settingsResult.success) {
+      settingsRestored = true
+    } else {
+      console.warn(
+        "[importFullBackup] settings restore skipped:",
+        (settingsResult as { error?: string }).error
+      )
+    }
+  }
+
   revalidatePath('/', 'layout')
   revalidatePath('/category/[slug]', 'page')
 
   const domainNote = skippedDomains > 0 ? `，跳过 ${skippedDomains} 个冲突域名` : ''
   const siteNote = skippedSites > 0 ? `，跳过 ${skippedSites} 条非法或重复站点` : ''
+  const settingsNote = settingsRestored ? '，已还原系统设置' : ''
   await writeAuditLog(
     "CREATE",
     "site",
@@ -3342,7 +3405,7 @@ async function importFullBackup(
   )
   return {
     success: true,
-    message: `全量备份导入完成：${importedWorkspaces} 个工作区${domainNote}${siteNote}`,
+    message: `全量备份导入完成：${importedWorkspaces} 个工作区${domainNote}${siteNote}${settingsNote}`,
     importedCount: importedWorkspaces,
   }
 }

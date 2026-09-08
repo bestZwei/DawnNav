@@ -1,4 +1,4 @@
-export const locales = ["zh", "en", "ja", "ko", "fr", "de"] as const
+export const locales = ["zh", "en"] as const
 
 export type Locale = (typeof locales)[number]
 
@@ -13,10 +13,6 @@ export const LOCALE_COOKIE_MAX_AGE = 31536000
 export const localeNames: Record<Locale, string> = {
   zh: "中文",
   en: "English",
-  ja: "日本語",
-  ko: "한국어",
-  fr: "Français",
-  de: "Deutsch",
 }
 
 export function isLocale(

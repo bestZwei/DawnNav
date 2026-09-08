@@ -437,7 +437,14 @@
       "backupAdvice": "建议在覆盖前先导出当前数据作为备份。",
       "tipTitle": "提示",
       "tipDesc": "导出的JSON文件不包含访问统计数据，导入后访问记录将丢失。如需保留统计数据，请使用数据库备份。",
-      "confirmOverwrite": "确认覆盖"
+      "confirmOverwrite": "确认覆盖",
+      "detectTitle": "已识别文件类型",
+      "detectFull": "识别为全站备份：{workspaces} 个工作区、{categories} 个分类、{sites} 个网址",
+      "detectFullSettings": "备份包含系统设置，覆盖导入时将一并还原",
+      "detectWorkspace": "识别为网址数据：{categories} 个分类、{sites} 个网址，将导入到当前选中的工作区",
+      "detectInvalid": "无法识别的 JSON 结构：需要分类数组或全站备份（nav-full-backup）格式",
+      "detectParseError": "JSON 解析失败，请检查文件内容",
+      "confirmOverwriteFull": "全站备份按工作区覆盖：库内同名工作区的内容将被清空并按备份重建，其余工作区不受影响。"
     },
     "categories": {
       "cannotLoad": "无法加载分类列表",
@@ -569,8 +576,13 @@
       "fieldDesc": "网站描述",
       "fieldOrder": "排序",
       "fieldPublished": "发布状态",
-      "fullBackup": "全量备份（含工作区）",
-      "fullBackupDesc": "包含工作区结构与域名绑定，用于整站迁移"
+      "fullBackup": "全站备份（含工作区）",
+      "fullBackupDesc": "包含全部工作区、域名绑定与系统设置，用于整站迁移",
+      "dataTypesTitle": "两种数据类型",
+      "siteDataType": "网址数据（当前工作区）",
+      "siteDataTypeDesc": "分类 + 网址数组，可含描述、排序、发布状态、详情与截图。导入到后台当前选中的工作区。",
+      "fullDataType": "全站备份（全部工作区 + 系统设置）",
+      "fullDataTypeDesc": "包含全部工作区（展示配置与域名绑定）及其分类网址，以及站点名、Logo、页脚、备案等系统设置；覆盖导入时一并还原设置。"
     },
     "settings": {
       "saveSuccess": "保存成功",

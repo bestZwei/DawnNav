@@ -123,6 +123,24 @@ export default function DataManagementPage() {
             </div>
           </div>
 
+          {/* 两种数据类型 */}
+          <div>
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <span className="text-lg">🗂️</span>
+              {t("dataTypesTitle")}
+            </h4>
+            <div className="grid gap-3 md:grid-cols-2 ml-7">
+              <div className="p-3 rounded-lg border bg-muted/30">
+                <p className="font-medium text-foreground mb-1">{t("siteDataType")}</p>
+                <p className="text-muted-foreground text-xs">{t("siteDataTypeDesc")}</p>
+              </div>
+              <div className="p-3 rounded-lg border border-blue-600/20 bg-blue-500/5">
+                <p className="font-medium text-foreground mb-1">{t("fullDataType")}</p>
+                <p className="text-muted-foreground text-xs">{t("fullDataTypeDesc")}</p>
+              </div>
+            </div>
+          </div>
+
           {/* 导入格式 */}
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">

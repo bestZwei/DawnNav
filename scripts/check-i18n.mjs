@@ -11,7 +11,7 @@ const messagesDir = join(process.cwd(), "messages")
 const baseLocale = "zh"
 
 // 与 lib/i18n.ts 的 locales 保持同步的防呆校验：目录里的文件必须都是受支持语言
-const supportedLocales = new Set(["zh", "en", "ja", "ko", "fr", "de"])
+const supportedLocales = new Set(["zh", "en"])
 
 const files = readdirSync(messagesDir)
   .filter((f) => f.endsWith(".json"))

@@ -437,7 +437,14 @@
       "backupAdvice": "Export current data as a backup before overwriting.",
       "tipTitle": "Tip",
       "tipDesc": "Exported JSON files exclude visit statistics; visit records will be lost after import. Use a database backup to keep statistics.",
-      "confirmOverwrite": "Overwrite"
+      "confirmOverwrite": "Overwrite",
+      "detectTitle": "File type detected",
+      "detectFull": "Detected a full backup: {workspaces} workspaces, {categories} categories, {sites} sites",
+      "detectFullSettings": "The backup includes system settings, which will be restored on overwrite import",
+      "detectWorkspace": "Detected site data: {categories} categories, {sites} sites, to be imported into the currently selected workspace",
+      "detectInvalid": "Unrecognized JSON structure: expected a category array or a full backup (nav-full-backup) format",
+      "detectParseError": "Failed to parse JSON, please check the file content",
+      "confirmOverwriteFull": "A full backup overwrites per workspace: contents of same-named workspaces in the database will be cleared and rebuilt from the backup; other workspaces are unaffected."
     },
     "categories": {
       "cannotLoad": "Unable to load categories",
@@ -570,7 +577,12 @@
       "fieldOrder": "Order",
       "fieldPublished": "Publish status",
       "fullBackup": "Full Backup (workspaces)",
-      "fullBackupDesc": "Includes workspace structures and domain bindings for site migration"
+      "fullBackupDesc": "Includes all workspaces, domain bindings and system settings for site migration",
+      "dataTypesTitle": "Two data types",
+      "siteDataType": "Site data (current workspace)",
+      "siteDataTypeDesc": "An array of categories + sites, optionally with descriptions, ordering, publish state, detail content and screenshots. Imported into the workspace currently selected in the admin panel.",
+      "fullDataType": "Full backup (all workspaces + system settings)",
+      "fullDataTypeDesc": "Includes every workspace (display config and domain bindings) with its categories and sites, plus system settings such as site name, logo, footer and ICP filing; settings are restored on overwrite import."
     },
     "settings": {
       "saveSuccess": "Saved",
