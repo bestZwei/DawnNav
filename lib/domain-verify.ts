@@ -22,7 +22,7 @@ const REQUEST_TIMEOUT_MS = 8_000
 const MAX_REDIRECTS = 3
 // 页面标记在 <head> 前部，512KB 上限远超实际需要
 const MAX_HTML_BYTES = 512 * 1024
-const PROBE_UA = "ConanNav-DomainVerify/1.0"
+const PROBE_UA = "DawnNav-DomainVerify/1.0"
 
 // ---- 私网 / 保留地址判断 ----
 

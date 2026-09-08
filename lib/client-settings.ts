@@ -22,19 +22,19 @@ export interface PublicSettings {
 }
 
 export const defaultSettings: PublicSettings = {
-  siteName: "Conan Nav",
+  siteName: "DawnNav",
   siteDescription: "简洁现代化的网址导航系统",
   siteLogo: null,
   favicon: null,
   pageSize: 20,
   showFooter: true,
-  footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
-  footerLinks: [{ name: "GitHub", url: "https://github.com/kenanlabs/nav" }],
+  footerCopyright: `© ${new Date().getFullYear()} DawnNav. All rights reserved.`,
+  footerLinks: [{ name: "GitHub", url: "https://github.com/bestZwei/DawnNav" }],
   showAdminLink: true,
   showIcp: false,
   icpNumber: null,
   icpLink: null,
-  githubUrl: "https://github.com/kenanlabs/nav",
+  githubUrl: "https://github.com/bestZwei/DawnNav",
   defaultLanguage: "zh",
   enableAnimations: true,
   plugins: { builtinEnabledIds: [], uploaded: [] },

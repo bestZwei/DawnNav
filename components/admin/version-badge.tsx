@@ -63,7 +63,7 @@ export function VersionBadge() {
   return (
     <div className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center">
       <a
-        href="https://github.com/kenanlabs/nav"
+        href="https://github.com/bestZwei/DawnNav"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 hover:text-foreground transition-colors"

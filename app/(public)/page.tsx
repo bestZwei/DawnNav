@@ -29,7 +29,7 @@ export default async function HomePage() {
 
   // 图鉴视图数据：服务端渲染时就地投影给整页视图，避免运行时请求
   const overviewData: OverviewData = {
-    siteName: settings?.siteName || "Conan Nav",
+    siteName: settings?.siteName || "DawnNav",
     siteDescription: settings?.siteDescription,
     footerCopyright: settings?.footerCopyright,
     categories: (categories || []).map((category) => ({

@@ -90,7 +90,7 @@ const superAdminNavItems = [
 export function AdminSidebar() {
   const pathname = usePathname()
   const t = useTranslations("admin.sidebar")
-  const [siteName, setSiteName] = useState("Conan Nav")
+  const [siteName, setSiteName] = useState("DawnNav")
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
   // 当前登录者是否超管：决定「用户管理/审计日志」入口是否展示。
   // 与 /api/admin/me 同源获取，复用其缓存策略

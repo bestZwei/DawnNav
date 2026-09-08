@@ -26,7 +26,7 @@ function LoginForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [siteName, setSiteName] = useState("Conan Nav")
+  const [siteName, setSiteName] = useState("DawnNav")
   const [siteDescription, setSiteDescription] = useState("")
   const [githubUrl, setGithubUrl] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)

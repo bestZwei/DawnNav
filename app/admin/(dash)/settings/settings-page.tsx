@@ -71,13 +71,13 @@ export default function AdminSettingsPage() {
   const tc = useTranslations("common")
   const [settings, setSettings] = useState<SystemSettingsData>({
     id: "",
-    siteName: "Conan Nav",
+    siteName: "DawnNav",
     siteDescription: "简洁现代化的网址导航系统",
     siteLogo: undefined,
     favicon: undefined,
     pageSize: 20,
     showFooter: true,
-    footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+    footerCopyright: `© ${new Date().getFullYear()} DawnNav. All rights reserved.`,
     footerLinks: [],
     showAdminLink: true,
     aboutContent: undefined,

@@ -5,8 +5,10 @@ import { useState, useEffect } from "react"
 export type CardViewMode = "standard" | "compact" | "overview"
 export type CardDensity = Exclude<CardViewMode, "overview">
 
-const STORAGE_KEY = "conan_nav_card_density"
-const EVENT_NAME = "conan-nav-card-density-change"
+const STORAGE_KEY = "dawnnav_card_density"
+const EVENT_NAME = "dawnnav-card-density-change"
+// 旧键名（更名前）仅用于读取回退，避免老用户本地设置丢失
+const LEGACY_STORAGE_KEY = "conan_nav_card_density"
 
 export function useCardDensity() {
   const [density, setDensityState] = useState<CardViewMode>("standard")
@@ -15,7 +17,8 @@ export function useCardDensity() {
   useEffect(() => {
     // 从 localStorage 读取存储的模式
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) as CardViewMode | null
+      const stored = (localStorage.getItem(STORAGE_KEY) ??
+        localStorage.getItem(LEGACY_STORAGE_KEY)) as CardViewMode | null
       if (stored === "compact" || stored === "standard" || stored === "overview") {
         setDensityState(stored)
       }

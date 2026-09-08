@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata")
 
   return {
-    title: settings?.siteName || "Conan Nav",
+    title: settings?.siteName || "DawnNav",
     description: settings?.siteDescription || t("descriptionFallback"),
     icons: {
       icon: settings?.favicon || "/favicon.ico",
@@ -50,19 +50,6 @@ export default async function RootLayout({
   return (
     <html lang={htmlLang(locale)} data-animations={settings?.enableAnimations !== false ? "true" : "false"} suppressHydrationWarning>
       <head>
-        {/*
-          esbuild keepNames 兜底：Vercel / Cloudflare（OpenNext）构建链会把
-          next-themes 的主题引导内联脚本改写为带 __name(fn, "fn") 调用的形式，
-          但该 helper 只存在于服务端 bundle，浏览器执行内联脚本时抛
-          ReferenceError: __name is not defined，水合整体失败（表现为回到顶部
-          按钮不出现等交互失效）。此处最早注入无操作 polyfill：
-          未被改写的环境不受影响，被改写的环境恢复可用。
-        */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: 'window.__name=window.__name||function(f){return f};',
-          }}
-        />
         {/* 当前请求渲染的工作区标识（机器可读），供管理后台域名反向探测比对 */}
         <WorkspaceMarker />
       </head>

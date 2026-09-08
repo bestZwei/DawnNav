@@ -10,7 +10,7 @@ import { PluginFooterSlot, useBuiltinPluginEnabled } from "@/lib/plugins/client"
 // 获取动态版权信息
 function getDefaultCopyright(): string {
   const year = new Date().getFullYear()
-  return `© ${year} Conan Nav. All rights reserved.`
+  return `© ${year} DawnNav. All rights reserved.`
 }
 
 export function Footer() {

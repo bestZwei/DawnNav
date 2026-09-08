@@ -47,7 +47,7 @@ async function ensureSettings() {
     settings = await prisma.systemSettings.create({
       data: {
         id: "default",
-        footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+        footerCopyright: `© ${new Date().getFullYear()} DawnNav. All rights reserved.`,
       },
     })
   }

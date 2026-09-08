@@ -179,16 +179,16 @@ async function main() {
     await prisma.systemSettings.create({
       data: {
         id: 'default',
-        siteName: 'Conan Nav',
+        siteName: 'DawnNav',
         siteDescription: '简洁现代化的网址导航系统',
         pageSize: 20,
         showFooter: true,
-        footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+        footerCopyright: `© ${new Date().getFullYear()} DawnNav. All rights reserved.`,
         footerLinks: [
-          { name: 'GitHub', url: 'https://github.com/kenanlabs/nav' }
+          { name: 'GitHub', url: 'https://github.com/bestZwei/DawnNav' }
         ],
         showAdminLink: true,
-        githubUrl: 'https://github.com/kenanlabs/nav',
+        githubUrl: 'https://github.com/bestZwei/DawnNav',
         // 历史默认开启的功能开关（enable_visit_tracking / enable_poetry 均为 default true）
         // 对应的内置插件随新部署默认启用，保持升级前后体验一致
         enabledPlugins: ['visit-tracking', 'poetry-card'],

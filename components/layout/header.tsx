@@ -48,7 +48,7 @@ interface HeaderProps {
 export function Header({
   categories,
   currentCategory = "",
-  siteName = "Conan Nav",
+  siteName = "DawnNav",
   siteLogo = null,
   searchQuery = "",
   onSearchChange,

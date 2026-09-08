@@ -1,3 +1,4 @@
+// DawnNav fork 自 kenanlabs/nav：更新检查仍对齐上游仓库的 Release
 export const UPSTREAM_REPO = "kenanlabs/nav"
 
 export const RELEASE_API_URL = `https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest`

@@ -17,7 +17,7 @@ const REQUEST_TIMEOUT_MS = 5000
 
 const GITHUB_HEADERS = {
   Accept: "application/vnd.github+json",
-  "User-Agent": "conan-nav-update-checker",
+  "User-Agent": "dawnnav-update-checker",
 }
 
 type LatestVersionInfo = {

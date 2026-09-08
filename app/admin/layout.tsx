@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata")
 
   return {
-    title: `${settings?.siteName || "Conan Nav"} - ${t("adminTitleSuffix")}`,
+    title: `${settings?.siteName || "DawnNav"} - ${t("adminTitleSuffix")}`,
     description: settings?.siteDescription || t("descriptionFallback"),
     icons: {
       icon: settings?.favicon || "/favicon.ico",
