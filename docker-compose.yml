@@ -27,7 +27,11 @@ services:
       # 会话密钥兜底文件持久化：未配置 SESSION_SECRET 时，重启/换镜像不会导致全部会话失效
       - nav-session-data:/app/.session-data
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      # 必须写 127.0.0.1 而非 localhost：容器内 /etc/hosts 通常同时有 `::1 localhost`，
+      # 而应用只监听 IPv4 0.0.0.0，走 localhost 会解析到 ::1 导致 Connection refused
+      # 探针一直失败（服务本身正常，仅状态标记 unhealthy）
+      # 用真实 GET 而非 --spider：DB 断连时接口返回 503，wget 退出 8，可正确判失败
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "-T", "5", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
