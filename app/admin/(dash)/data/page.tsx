@@ -84,6 +84,12 @@ export default function DataManagementPage() {
                     <span className="text-xs text-muted-foreground">{t("fullBackupDesc")}</span>
                   </div>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.open('/api/data/export?mode=full&screenshots=data', '_blank')}>
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="font-medium">{t("fullBackupWithScreenshots")}</span>
+                    <span className="text-xs text-muted-foreground">{t("fullBackupWithScreenshotsDesc")}</span>
+                  </div>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => window.open('/api/bookmarks/export', '_blank')}>
                   <div className="flex flex-col items-start gap-1">
                     <span className="font-medium">{t("chromeBookmark")}</span>

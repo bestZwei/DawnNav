@@ -2707,7 +2707,9 @@ export async function updateSystemSettings(data: {
 
 // 数据导出：workspace 模式导出当前后台选中工作区（兼容旧格式数组）；
 // full 模式导出含工作区结构与域名绑定的全量备份
-export async function exportData(mode: "workspace" | "full" = "workspace") {
+// includeScreenshotData：是否包含上传截图的 base64 数据。默认不含——
+// 默认导出仅保留 URL 来源截图（UPLOAD 来源整体剔除，避免导入时因缺 data 校验失败）
+export async function exportData(mode: "workspace" | "full" = "workspace", includeScreenshotData = false) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
@@ -2725,7 +2727,10 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
               include: {
                 screenshots: {
                   orderBy: { order: 'asc' },
-                  select: { source: true, url: true, data: true, mimeType: true, order: true },
+                  // 不含 data 时不查询该大字段，减少数据库读取开销
+                  select: includeScreenshotData
+                    ? { source: true, url: true, data: true, mimeType: true, order: true }
+                    : { source: true, url: true, order: true },
                 },
               },
             },
@@ -2795,13 +2800,17 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
                   isPublished: site.isPublished,
                   isPinned: site.isPinned,
                   detailContent: site.detailContent,
-                  screenshots: (site.screenshots || []).map((shot: any) => ({
-                    source: shot.source,
-                    url: shot.url,
-                    data: shot.data,
-                    mimeType: shot.mimeType,
-                    order: shot.order,
-                  })),
+                  // 不含 data 时剔除 UPLOAD 截图：无 data 的 UPLOAD 条目会在导入校验中
+                  // 触发 IMPORT_SITE_VALIDATION_FAILED 导致整份文件被拒
+                  screenshots: (site.screenshots || [])
+                    .filter((shot: any) => includeScreenshotData || shot.source === "URL")
+                    .map((shot: any) => ({
+                      source: shot.source,
+                      url: shot.url,
+                      data: shot.data,
+                      mimeType: shot.mimeType,
+                      order: shot.order,
+                    })),
                 })),
               })),
           })),
@@ -2820,14 +2829,17 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
           include: {
             screenshots: {
               orderBy: { order: 'asc' },
-              select: { source: true, url: true, data: true, mimeType: true, order: true },
+              select: includeScreenshotData
+                ? { source: true, url: true, data: true, mimeType: true, order: true }
+                : { source: true, url: true, order: true },
             },
           },
         },
       },
     })
 
-    // 导出完整数据（包含描述、排序、图标、置顶、详情内容、截图等所有字段）
+    // 导出完整数据（包含描述、排序、图标、置顶、详情内容、截图等所有字段；
+    // 默认不含截图二进制数据，URL 来源截图仅保留链接）
     const fullData = categories.map(category => ({
       name: category.name,
       slug: category.slug,
@@ -2842,13 +2854,15 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
         isPublished: site.isPublished,
         isPinned: site.isPinned,
         detailContent: site.detailContent,
-        screenshots: (site.screenshots || []).map(shot => ({
-          source: shot.source,
-          url: shot.url,
-          data: shot.data,
-          mimeType: shot.mimeType,
-          order: shot.order,
-        })),
+        screenshots: (site.screenshots || [])
+          .filter(shot => includeScreenshotData || shot.source === "URL")
+          .map(shot => ({
+            source: shot.source,
+            url: shot.url,
+            data: shot.data,
+            mimeType: shot.mimeType,
+            order: shot.order,
+          })),
       })),
     }))
 

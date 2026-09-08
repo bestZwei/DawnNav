@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
   try {
     // mode=workspace（默认）：导出当前选中工作区；mode=full：含工作区结构与域名绑定的全量备份
     const mode = request.nextUrl.searchParams.get('mode') === 'full' ? 'full' : 'workspace'
-    const result = await exportData(mode)
+    // screenshots=data：额外包含上传截图的 base64 数据；默认不含（体积可达几十上百 MB）
+    const includeScreenshotData = request.nextUrl.searchParams.get('screenshots') === 'data'
+    const result = await exportData(mode, includeScreenshotData)
 
     if (!result.success || !result.data) {
       return NextResponse.json(
