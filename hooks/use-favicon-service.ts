@@ -3,13 +3,18 @@
 import { useState, useEffect } from "react"
 
 // Favicon 服务类型
-export type FaviconService = "favicon-im" | "bqb-cool" | "duckduckgo"
+export type FaviconService = "favicon-im" | "is-an-org" | "bqb-cool" | "duckduckgo"
 
 // Favicon 服务配置（name 供切换按钮展示，url 供前台拼图标地址）
 export const FAVICON_SERVICES = {
   "favicon-im": {
     name: "favicon.im",
     url: (domain: string) => `https://favicon.im/${domain}`,
+  },
+  // is-an.org 自带 Google/DDG/Yandex/favicon.im 聚合与降级，sz 直取 64px 适配高清显示
+  "is-an-org": {
+    name: "favicon.is-an.org",
+    url: (domain: string) => `https://favicon.is-an.org/?domain=${domain}&sz=64`,
   },
   "bqb-cool": {
     name: "icon.bqb.cool",
@@ -94,6 +99,7 @@ export function getFaviconUrl(domain: string, service: FaviconService = DEFAULT_
 // 允许走本地代理缓存的上游域名（与 /api/icon 白名单保持一致）
 const PROXYABLE_HOSTS = new Set([
   "favicon.im",
+  "favicon.is-an.org",
   "icon.bqb.cool",
   "icons.duckduckgo.com",
   "www.google.com",

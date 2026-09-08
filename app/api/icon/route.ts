@@ -22,20 +22,22 @@ const FAIL_TTL = 10 * 60 * 1000
 const UPSTREAM_TIMEOUT = 5000
 const MEMORY_CACHE_LIMIT = 800
 
-type FaviconServiceKey = "favicon-im" | "bqb-cool" | "duckduckgo"
+type FaviconServiceKey = "favicon-im" | "is-an-org" | "bqb-cool" | "duckduckgo"
 
 const UPSTREAMS: Record<FaviconServiceKey, (domain: string) => string> = {
   "favicon-im": (domain) => `https://favicon.im/${domain}?larger=true`,
+  "is-an-org": (domain) => `https://favicon.is-an.org/?domain=${domain}&sz=64`,
   "bqb-cool": (domain) => `https://icon.bqb.cool?url=https://${domain}`,
   duckduckgo: (domain) => `https://icons.duckduckgo.com/ip3/${domain}.ico`,
 }
 
 // fallback 顺序：bqb.cool 在 duckduckgo 之前——后者在部分网络环境不可达，
 // 放在前面会让每次 fallback 白等一个 UPSTREAM_TIMEOUT
-const DEFAULT_ORDER: FaviconServiceKey[] = ["favicon-im", "bqb-cool", "duckduckgo"]
+const DEFAULT_ORDER: FaviconServiceKey[] = ["favicon-im", "is-an-org", "bqb-cool", "duckduckgo"]
 
 const URL_PROXY_WHITELIST = new Set([
   "favicon.im",
+  "favicon.is-an.org",
   "icon.bqb.cool",
   "icons.duckduckgo.com",
   "www.google.com",

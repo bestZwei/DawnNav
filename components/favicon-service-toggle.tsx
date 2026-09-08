@@ -12,7 +12,7 @@ import { Images } from "lucide-react"
 import { useFaviconService, FAVICON_SERVICES, type FaviconService } from "@/hooks/use-favicon-service"
 import { toast } from "sonner"
 
-const SERVICES: FaviconService[] = ["favicon-im", "bqb-cool", "duckduckgo"]
+const SERVICES: FaviconService[] = ["favicon-im", "is-an-org", "bqb-cool", "duckduckgo"]
 
 export function FaviconServiceToggle() {
   const { service, setService } = useFaviconService()

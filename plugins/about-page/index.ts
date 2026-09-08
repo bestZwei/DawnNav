@@ -1,8 +1,9 @@
 import { FileText } from "lucide-react"
 import type { PluginDefinition } from "@/lib/plugins/types"
+import { AboutHeaderSlot } from "./header-slot"
 import { PLUGIN_ID } from "./constants"
 
-// 关于页面插件：启用后前台出现 /about 路由入口（页脚链接 + sitemap）。
+// 关于页面插件：启用后前台出现 /about 路由入口（顶栏图标 + 页脚链接 + sitemap）。
 // 内容为 Markdown：全局默认存 SystemSettings.aboutContent，工作区可覆盖；
 // 内容数据与插件开关分离（禁用插件保留内容，重新启用即恢复）
 export const aboutPagePlugin: PluginDefinition = {
@@ -14,4 +15,5 @@ export const aboutPagePlugin: PluginDefinition = {
   author: "kenanlabs",
   defaultEnabled: false,
   configFields: [],
+  headerSlot: AboutHeaderSlot,
 }
