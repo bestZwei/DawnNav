@@ -23,6 +23,7 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 - 🖼️ Smart Icons - auto-fetches site favicons, falls back to the first letter on failure
 - 🌓 Dark Mode - one-click toggle (Light / Dark / System)
 - 📜 **Daily Poetry** - fetches a poem of the day with elegant vertical layout
+- 📢 **Announcements** - admin-published maintenance notices or event previews shown as dismissible popups one after another, newest first (each announcement shown once per visitor)
 
 ### Admin Dashboard
 - 📊 Statistics - visit frequency charts, site rankings
@@ -37,7 +38,8 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 - ⚙️ System Settings - site name, logo, favicon, GitHub link, ICP filing, etc.
 - 📈 Visit Tracking - optional site visit statistics
 - 🧩 **Plugin System** - builtin collection/browser-extension plugins plus user-uploaded declarative plugins; see the [Plugin Development Guide](docs/plugin-development.md)
-- 📜 **Audit log** - records sign-ins and site/category/workspace/domain/plugin/settings/admin changes, kept for 90 days, super admin only (searchable and filterable)
+- 📢 **Announcements** - publish maintenance notices or event previews per workspace, with an optional link and an effective time window
+- 📜 **Audit log** - records sign-ins and site/category/workspace/domain/plugin/announcement/settings/admin changes, kept for 90 days, super admin only (searchable and filterable)
 
 ### Technical Highlights
 - **Two-tier admin roles** - super admin / admin; the database is the source of truth, so demotion and password changes take effect immediately; all checks live in `lib/roles.ts`
@@ -120,7 +122,7 @@ npm run dev
 
 ## 🗂️ Multi-Workspace & Subdomain Routing
 
-A workspace is an independent content space: each workspace has its own categories, sites, and display config (title, description, logo, favicon), and can be bound to one or more domains. Visiting different subdomains renders the matching workspace; unmatched domains fall back to the default workspace.
+A workspace is an independent content space: each workspace has its own categories, sites, announcements, and display config (title, description, logo, favicon), and can be bound to one or more domains. Visiting different subdomains renders the matching workspace; unmatched domains fall back to the default workspace.
 
 ```
 Browser visits zh.example.com ──┐
@@ -140,7 +142,7 @@ Browser visits nav.example.com ─┘   (unmatched/unpublished) ──> Render t
 
 | Content | Scope |
 |---------|-------|
-| Categories, sites | Isolated per workspace |
+| Categories, sites, announcements | Isolated per workspace |
 | Title, description, logo, favicon | Per-workspace override, empty falls back to global |
 | Category slug uniqueness | Unique within a workspace, reusable across workspaces |
 | sitemap / robots | Output per visiting domain's workspace |

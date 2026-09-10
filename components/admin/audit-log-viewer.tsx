@@ -44,6 +44,7 @@ const ENTITY_TYPES = [
   "workspace",
   "domain",
   "plugin",
+  "announcement",
   "settings",
 ] as const
 

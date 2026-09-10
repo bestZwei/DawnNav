@@ -132,7 +132,7 @@
     },
     "announcements": {
       "title": "通知公告",
-      "desc": "发布维护通知、活动预告等，以前台弹窗形式展示给访客（同一条公告每位访客仅弹一次）",
+      "desc": "发布当前工作区的维护通知、活动预告等，前台以弹窗依次弹出（多条从新到旧排队，同一条公告每位访客仅弹一次）",
       "create": "新建公告",
       "createTitle": "新建公告",
       "editTitle": "编辑公告",
@@ -228,6 +228,7 @@
       "entityWorkspace": "工作区",
       "entityDomain": "域名",
       "entityPlugin": "插件",
+      "entityAnnouncement": "通知公告",
       "entitySettings": "系统设置"
     },
     "login": {
@@ -924,6 +925,12 @@
     "CATEGORY_NOT_IN_WORKSPACE": "分类不属于当前工作区",
     "CATEGORY_HAS_SITES": "该分类下仍有 {count} 个站点，请先移除或转移这些站点后再删除分类",
     "SITE_URL_INVALID_PROTOCOL": "URL 必须使用 http 或 https 协议",
+    "ANNOUNCEMENT_TITLE_REQUIRED": "公告标题不能为空",
+    "ANNOUNCEMENT_TITLE_TOO_LONG": "公告标题不能超过 100 个字符",
+    "ANNOUNCEMENT_CONTENT_REQUIRED": "公告内容不能为空",
+    "ANNOUNCEMENT_CONTENT_TOO_LONG": "公告内容不能超过 5000 个字符",
+    "ANNOUNCEMENT_LINK_TEXT_TOO_LONG": "链接文案不能超过 50 个字符",
+    "ANNOUNCEMENT_NOT_FOUND": "公告不存在或已被删除",
     "TARGET_CATEGORY_NOT_IN_WORKSPACE": "目标分类不属于当前工作区",
     "SITE_NOT_IN_WORKSPACE": "站点不属于当前工作区",
     "PASSWORD_TOO_SHORT": "新密码至少需要6个字符",

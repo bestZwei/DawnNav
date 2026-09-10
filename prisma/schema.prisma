@@ -29,6 +29,7 @@ model Workspace {
   order           Int        @default(0)
   domains         Domain[]
   categories      Category[]
+  announcements   Announcement[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -235,6 +236,7 @@ model Visit {
 }
 
 // 前台公告（维护通知/活动预告）：由管理员在后台发布，前台以弹窗形式展示。
+// 按工作区隔离——每个工作区维护各自的公告，前台只展示当前访问工作区的公告。
 // 「只显示一次」由前端实现——关闭后把公告 id 写入 localStorage，
 // 同一条不再弹出；下次发布新公告（id 变化）会再弹一次。
 model Announcement {
@@ -248,9 +250,15 @@ model Announcement {
   // 生效时间窗：两端都可为空（空表示不限制）
   startAt     DateTime? @map("start_at")
   endAt       DateTime? @map("end_at")
+  // 所属工作区。默认值 "ws-default" 仅为升级兼容：工作区隔离上线前创建的
+  // 全局公告在 db push 时会自动归入默认工作区（默认工作区 id 固定为 ws-default）。
+  // 运行时创建始终显式写入当前工作区 id，不依赖此默认值。
+  workspaceId String    @default("ws-default") @map("workspace_id")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  @@index([workspaceId])
   @@index([isPublished])
   @@index([createdAt])
   @@map("Announcement")

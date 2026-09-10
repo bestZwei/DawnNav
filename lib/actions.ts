@@ -2298,6 +2298,7 @@ const AUDIT_LOG_ENTITY_TYPES = [
   "workspace",
   "domain",
   "plugin",
+  "announcement",
   "settings",
 ] as const
 
@@ -3601,16 +3602,28 @@ export async function importBookmarks(
 
 // ==================== Announcements（前台公告） ====================
 
-// 公告生效口径：已发布且在时间窗内（起止时间均可为空＝不限制）。
+// 公告生效口径：属于指定工作区、已发布且在时间窗内（起止时间均可为空＝不限制）。
 // 前台与后台共用，避免两处判定漂移导致「后台显示已发布、前台却不出」
-function announcementActiveWhere(now: Date = new Date()) {
+function announcementActiveWhere(workspaceId: string, now: Date = new Date()) {
   return {
+    workspaceId,
     isPublished: true,
     AND: [
       { OR: [{ startAt: null }, { startAt: { lte: now } }] },
       { OR: [{ endAt: null }, { endAt: { gte: now } }] },
     ],
   }
+}
+
+// 后台写操作的工作区归属校验：目标公告必须属于当前选中的工作区。
+// 与分类/网址的跨工作区防护对齐，防止客户端构造调用改/删其他工作区的公告
+async function isAnnouncementInCurrentWorkspace(id: string): Promise<boolean> {
+  const workspace = await getAdminWorkspace()
+  const announcement = await prisma.announcement.findUnique({
+    where: { id },
+    select: { workspaceId: true },
+  })
+  return Boolean(announcement && announcement.workspaceId === workspace.id)
 }
 
 export interface AnnouncementInput {
@@ -3657,12 +3670,14 @@ function normalizeAnnouncementInput(data: AnnouncementInput) {
   }
 }
 
-// 后台列表：按创建时间倒序（新发布的在最上）
+// 后台列表：仅当前选中工作区的公告，按创建时间倒序（新发布的在最上）
 export async function getAnnouncements() {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    const workspace = await getAdminWorkspace()
     const items = await prisma.announcement.findMany({
+      where: { workspaceId: workspace.id },
       orderBy: { createdAt: "desc" },
     })
     return { success: true, data: items }
@@ -3681,11 +3696,17 @@ export async function createAnnouncement(data: AnnouncementInput) {
   if ("error" in validated) return { success: false, error: validated.error }
 
   try {
+    const workspace = await getAdminWorkspace()
     const created = await prisma.announcement.create({
-      data: normalizeAnnouncementInput(data),
+      data: { ...normalizeAnnouncementInput(data), workspaceId: workspace.id },
     })
     revalidatePath("/")
-    await writeAuditLog("CREATE", "announcement", created.id, `发布公告：${created.title}`)
+    await writeAuditLog(
+      "CREATE",
+      "announcement",
+      created.id,
+      `发布公告「${created.title}」（工作区：${workspace.name}）`
+    )
     return { success: true, data: created }
   } catch (error) {
     if (isNextDynamicError(error)) throw error
@@ -3701,8 +3722,10 @@ export async function updateAnnouncement(id: string, data: AnnouncementInput) {
   const validated = validateAnnouncementInput(data)
   if ("error" in validated) return { success: false, error: validated.error }
 
-  const existing = await prisma.announcement.findUnique({ where: { id } })
-  if (!existing) return { success: false, error: "ANNOUNCEMENT_NOT_FOUND" }
+  // 跨工作区保护：目标公告必须属于当前选中的工作区
+  if (!(await isAnnouncementInCurrentWorkspace(id))) {
+    return { success: false, error: "ANNOUNCEMENT_NOT_FOUND" }
+  }
 
   try {
     const updated = await prisma.announcement.update({
@@ -3710,7 +3733,7 @@ export async function updateAnnouncement(id: string, data: AnnouncementInput) {
       data: normalizeAnnouncementInput(data),
     })
     revalidatePath("/")
-    await writeAuditLog("UPDATE", "announcement", id, `更新公告：${updated.title}`)
+    await writeAuditLog("UPDATE", "announcement", id, `更新公告「${updated.title}」`)
     return { success: true, data: updated }
   } catch (error) {
     if (isNextDynamicError(error)) throw error
@@ -3725,11 +3748,15 @@ export async function deleteAnnouncement(id: string) {
 
   const existing = await prisma.announcement.findUnique({ where: { id } })
   if (!existing) return { success: false, error: "ANNOUNCEMENT_NOT_FOUND" }
+  // 跨工作区保护：目标公告必须属于当前选中的工作区
+  if (!(await isAnnouncementInCurrentWorkspace(id))) {
+    return { success: false, error: "ANNOUNCEMENT_NOT_FOUND" }
+  }
 
   try {
     await prisma.announcement.delete({ where: { id } })
     revalidatePath("/")
-    await writeAuditLog("DELETE", "announcement", id, `删除公告：${existing.title}`)
+    await writeAuditLog("DELETE", "announcement", id, `删除公告「${existing.title}」`)
     return { success: true }
   } catch (error) {
     if (isNextDynamicError(error)) throw error
@@ -3738,27 +3765,29 @@ export async function deleteAnnouncement(id: string) {
   }
 }
 
-// 前台读取：取当前生效的**最新**一条（无则返回 null）。
-// 只读公开接口，不做鉴权；前台布局每次请求都会调用，查询走 isPublished 索引
-export async function getActiveAnnouncement() {
+// 前台读取：当前请求工作区下**所有**生效公告，按创建时间倒序（新的在前）。
+// 前台据此顺序依次弹窗展示；无生效公告时返回空数组。
+// 只读公开接口，不做鉴权；前台布局每次请求都会调用，查询走 workspaceId/isPublished 索引
+export async function getActiveAnnouncements() {
   try {
-    const announcement = await prisma.announcement.findFirst({
-      where: announcementActiveWhere(),
-      orderBy: { createdAt: "desc" },
+    const workspace = await getCurrentWorkspace()
+    const announcements = await prisma.announcement.findMany({
+      where: announcementActiveWhere(workspace.id),
+      // createdAt 相同（毫秒级碰撞）时以 id 作次序，保证返回顺序稳定
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       select: {
         id: true,
         title: true,
         content: true,
         linkUrl: true,
         linkText: true,
-        updatedAt: true,
       },
     })
-    return announcement
+    return announcements
   } catch (error) {
     if (isNextDynamicError(error)) throw error
-    console.error("Error loading active announcement:", error)
-    return null
+    console.error("Error loading active announcements:", error)
+    return []
   }
 }
 

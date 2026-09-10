@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Megaphone, Pencil, Plus, Trash2, Loader2, CalendarClock, Link as LinkIcon } from "lucide-react"
@@ -121,9 +121,23 @@ export default function AnnouncementsPage() {
     setLoading(false)
   }, [t, tAE])
 
+  // 持有最新的 load，挂载 effect 仅执行一次且不缺依赖
+  const loadRef = useRef(load)
   useEffect(() => {
-    load()
-  }, [load])
+    loadRef.current = load
+  })
+
+  useEffect(() => {
+    loadRef.current()
+  }, [])
+
+  // 顶栏切换工作区后重新加载当前工作区的公告列表
+  useEffect(() => {
+    const onWorkspaceChanged = () => loadRef.current()
+    window.addEventListener("workspace-context-changed", onWorkspaceChanged)
+    return () =>
+      window.removeEventListener("workspace-context-changed", onWorkspaceChanged)
+  }, [])
 
   const openCreate = () => {
     setEditingId(null)

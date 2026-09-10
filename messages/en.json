@@ -132,7 +132,7 @@
     },
     "announcements": {
       "title": "Announcements",
-      "desc": "Post maintenance notices and event news shown to visitors as a frontend popup (each announcement is shown once per visitor)",
+      "desc": "Post maintenance notices and event news for the current workspace; visitors see them as frontend popups one after another, newest first (each announcement is shown once per visitor)",
       "create": "New announcement",
       "createTitle": "New announcement",
       "editTitle": "Edit announcement",
@@ -228,6 +228,7 @@
       "entityWorkspace": "Workspace",
       "entityDomain": "Domain",
       "entityPlugin": "Plugin",
+      "entityAnnouncement": "Announcement",
       "entitySettings": "System settings"
     },
     "login": {
@@ -924,6 +925,12 @@
     "CATEGORY_NOT_IN_WORKSPACE": "Category does not belong to the current workspace",
     "CATEGORY_HAS_SITES": "This category still has {count} sites; remove or move them before deleting",
     "SITE_URL_INVALID_PROTOCOL": "URL must use the http or https protocol",
+    "ANNOUNCEMENT_TITLE_REQUIRED": "Announcement title cannot be empty",
+    "ANNOUNCEMENT_TITLE_TOO_LONG": "Announcement title cannot exceed 100 characters",
+    "ANNOUNCEMENT_CONTENT_REQUIRED": "Announcement content cannot be empty",
+    "ANNOUNCEMENT_CONTENT_TOO_LONG": "Announcement content cannot exceed 5000 characters",
+    "ANNOUNCEMENT_LINK_TEXT_TOO_LONG": "Link text cannot exceed 50 characters",
+    "ANNOUNCEMENT_NOT_FOUND": "Announcement not found or already deleted",
     "TARGET_CATEGORY_NOT_IN_WORKSPACE": "Target category does not belong to the current workspace",
     "SITE_NOT_IN_WORKSPACE": "Site does not belong to the current workspace",
     "PASSWORD_TOO_SHORT": "New password must be at least 6 characters",
