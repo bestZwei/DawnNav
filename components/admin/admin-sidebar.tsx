@@ -15,6 +15,7 @@ import {
   Puzzle,
   Settings,
   ScrollText,
+  Megaphone,
 } from "lucide-react"
 import {
   Sidebar,
@@ -64,6 +65,11 @@ const navItems = [
     titleKey: "plugins",
     href: "/admin/plugins",
     icon: Puzzle,
+  },
+  {
+    titleKey: "announcements",
+    href: "/admin/announcements",
+    icon: Megaphone,
   },
   {
     titleKey: "settings",

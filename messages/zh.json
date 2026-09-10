@@ -10,7 +10,13 @@
     "loadFailed": "加载失败",
     "retryLater": "请稍后重试",
     "backToTop": "回到顶部",
-    "edit": "编辑"
+    "edit": "编辑",
+    "delete": "删除"
+  },
+  "announcement": {
+    "ariaLabel": "站点公告",
+    "learnMore": "了解详情",
+    "gotIt": "我知道了"
   },
   "locale": {
     "switch": "切换语言",
@@ -120,8 +126,42 @@
       },
       "workspaces": "工作区管理",
       "plugins": "插件管理",
+      "announcements": "通知公告",
       "users": "用户管理",
       "audit": "审计日志"
+    },
+    "announcements": {
+      "title": "通知公告",
+      "desc": "发布维护通知、活动预告等，以前台弹窗形式展示给访客（同一条公告每位访客仅弹一次）",
+      "create": "新建公告",
+      "createTitle": "新建公告",
+      "editTitle": "编辑公告",
+      "formDesc": "发布的公告会在前台页面以弹窗展示，可用于维护通知、活动预告等场景",
+      "fieldTitle": "标题",
+      "titlePlaceholder": "例如：本站将于本周六凌晨维护",
+      "fieldContent": "内容",
+      "contentPlaceholder": "维护时间、影响范围、注意事项…",
+      "markdownHint": "支持 Markdown 语法（加粗、列表、链接等）",
+      "fieldLink": "详情链接（可选）",
+      "fieldLinkText": "链接文案（可选）",
+      "linkTextPlaceholder": "了解详情",
+      "fieldStartAt": "生效开始时间（可选）",
+      "fieldEndAt": "生效结束时间（可选）",
+      "fieldPublished": "立即发布",
+      "publishedHint": "关闭后公告不会在前台展示，内容保留",
+      "published": "已发布",
+      "draft": "未发布",
+      "noLimit": "不限",
+      "emptyTitle": "还没有公告",
+      "emptyDesc": "新建一条公告，访客访问前台时会看到弹窗提示",
+      "loadFailed": "加载公告失败",
+      "saveFailed": "保存公告失败",
+      "createSuccess": "公告已创建",
+      "saveSuccess": "公告已保存",
+      "deleteSuccess": "公告已删除",
+      "deleteFailed": "删除公告失败",
+      "deleteConfirmTitle": "确认删除这条公告？",
+      "deleteConfirmDesc": "删除后不可恢复，已看过该公告的访客记录不受影响。"
     },
     "usersManager": {
       "searchPlaceholder": "搜索邮箱或姓名",

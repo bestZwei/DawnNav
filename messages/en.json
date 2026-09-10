@@ -10,7 +10,13 @@
     "loadFailed": "Failed to load",
     "retryLater": "Please try again later",
     "backToTop": "Back to top",
-    "edit": "Edit"
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "announcement": {
+    "ariaLabel": "Site announcement",
+    "learnMore": "Learn more",
+    "gotIt": "Got it"
   },
   "locale": {
     "switch": "Switch language",
@@ -120,8 +126,42 @@
       },
       "workspaces": "Workspaces",
       "plugins": "Plugins",
+      "announcements": "Announcements",
       "users": "Users",
       "audit": "Audit Log"
+    },
+    "announcements": {
+      "title": "Announcements",
+      "desc": "Post maintenance notices and event news shown to visitors as a frontend popup (each announcement is shown once per visitor)",
+      "create": "New announcement",
+      "createTitle": "New announcement",
+      "editTitle": "Edit announcement",
+      "formDesc": "Published announcements appear as a popup on the public site — use them for maintenance notices or event news",
+      "fieldTitle": "Title",
+      "titlePlaceholder": "e.g. Scheduled maintenance this Saturday at 02:00",
+      "fieldContent": "Content",
+      "contentPlaceholder": "Maintenance window, impact, notes…",
+      "markdownHint": "Markdown is supported (bold, lists, links, …)",
+      "fieldLink": "Detail link (optional)",
+      "fieldLinkText": "Link label (optional)",
+      "linkTextPlaceholder": "Learn more",
+      "fieldStartAt": "Start time (optional)",
+      "fieldEndAt": "End time (optional)",
+      "fieldPublished": "Publish now",
+      "publishedHint": "When off, the announcement is not shown on the public site but is kept",
+      "published": "Published",
+      "draft": "Draft",
+      "noLimit": "No limit",
+      "emptyTitle": "No announcements yet",
+      "emptyDesc": "Create one and visitors will see it as a popup on the public site",
+      "loadFailed": "Failed to load announcements",
+      "saveFailed": "Failed to save announcement",
+      "createSuccess": "Announcement created",
+      "saveSuccess": "Announcement saved",
+      "deleteSuccess": "Announcement deleted",
+      "deleteFailed": "Failed to delete announcement",
+      "deleteConfirmTitle": "Delete this announcement?",
+      "deleteConfirmDesc": "This cannot be undone. Visitors who already dismissed it are not affected."
     },
     "usersManager": {
       "searchPlaceholder": "Search email or name",

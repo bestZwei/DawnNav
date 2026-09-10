@@ -233,3 +233,25 @@ model Visit {
   @@index([visitedAt])
   @@index([siteId, visitedAt])
 }
+
+// 前台公告（维护通知/活动预告）：由管理员在后台发布，前台以弹窗形式展示。
+// 「只显示一次」由前端实现——关闭后把公告 id 写入 localStorage，
+// 同一条不再弹出；下次发布新公告（id 变化）会再弹一次。
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  // 可选「了解更多」链接（协议白名单校验，仅 http/https）
+  linkUrl     String?   @map("link_url")
+  linkText    String?   @map("link_text")
+  isPublished Boolean   @default(false) @map("is_published")
+  // 生效时间窗：两端都可为空（空表示不限制）
+  startAt     DateTime? @map("start_at")
+  endAt       DateTime? @map("end_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([isPublished])
+  @@index([createdAt])
+  @@map("Announcement")
+}

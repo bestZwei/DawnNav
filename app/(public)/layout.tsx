@@ -1,6 +1,8 @@
 import { getCachedDisplaySettings } from "@/lib/workspace-render"
 import { ClientPluginsProvider } from "@/lib/plugins/client"
 import { getClientPluginsView } from "@/lib/plugins/server"
+import { getActiveAnnouncement } from "@/lib/actions"
+import { AnnouncementDialog } from "@/components/announcement-dialog"
 
 // 前台公共布局：管理员自定义代码仅注入前台导航页（首页/分类/搜索/关于），
 // 管理后台不注入——统计与挂件脚本只需要对访客生效，混入后台页面对账时易污染数据。
@@ -12,6 +14,8 @@ export default async function PublicLayout({
   // 自定义代码注入依赖展示配置（工作区覆盖后的最终值）
   const settings = await getCachedDisplaySettings()
   const initialPlugins = await getClientPluginsView()
+  // 公告：取当前生效的最新一条，未发布/过期时为 null（组件不渲染）
+  const announcement = await getActiveAnnouncement()
 
   return (
     <ClientPluginsProvider initialPlugins={initialPlugins}>
@@ -27,6 +31,8 @@ export default async function PublicLayout({
         />
       )}
       {children}
+      {/* 公告弹窗：延迟展示，同一条公告每个访客仅弹一次 */}
+      <AnnouncementDialog announcement={announcement} />
       {/* 管理员自定义代码（尾部）：SSR 直出于前台内容结尾，适合页面特效、
           第三方挂件、客服代码等不影响首屏的自定义内容；容器保持可见，
           静态标签（iframe/挂件 DOM）可直接渲染；suppressHydrationWarning 同上 */}

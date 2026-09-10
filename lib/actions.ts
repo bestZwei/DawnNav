@@ -3599,3 +3599,166 @@ export async function importBookmarks(
   }
 }
 
+// ==================== Announcements（前台公告） ====================
+
+// 公告生效口径：已发布且在时间窗内（起止时间均可为空＝不限制）。
+// 前台与后台共用，避免两处判定漂移导致「后台显示已发布、前台却不出」
+function announcementActiveWhere(now: Date = new Date()) {
+  return {
+    isPublished: true,
+    AND: [
+      { OR: [{ startAt: null }, { startAt: { lte: now } }] },
+      { OR: [{ endAt: null }, { endAt: { gte: now } }] },
+    ],
+  }
+}
+
+export interface AnnouncementInput {
+  title: string
+  content: string
+  linkUrl?: string | null
+  linkText?: string | null
+  isPublished?: boolean
+  startAt?: Date | null
+  endAt?: Date | null
+}
+
+// 输入校验：标题/内容必填且限长，链接走协议白名单（渲染为前台 <a href>，
+// javascript: 等协议会形成存储型 XSS）
+function validateAnnouncementInput(
+  data: AnnouncementInput
+): { error: string } | { ok: true } {
+  if (typeof data.title !== "string" || !data.title.trim()) {
+    return { error: "ANNOUNCEMENT_TITLE_REQUIRED" }
+  }
+  if (data.title.trim().length > 100) return { error: "ANNOUNCEMENT_TITLE_TOO_LONG" }
+  if (typeof data.content !== "string" || !data.content.trim()) {
+    return { error: "ANNOUNCEMENT_CONTENT_REQUIRED" }
+  }
+  if (data.content.length > 5000) return { error: "ANNOUNCEMENT_CONTENT_TOO_LONG" }
+  if (data.linkUrl && !isSafeSiteUrl(data.linkUrl)) {
+    return { error: "SITE_URL_INVALID_PROTOCOL" }
+  }
+  if (data.linkText && data.linkText.trim().length > 50) {
+    return { error: "ANNOUNCEMENT_LINK_TEXT_TOO_LONG" }
+  }
+  return { ok: true }
+}
+
+function normalizeAnnouncementInput(data: AnnouncementInput) {
+  return {
+    title: data.title.trim(),
+    content: data.content,
+    linkUrl: data.linkUrl?.trim() || null,
+    linkText: data.linkText?.trim() || null,
+    isPublished: data.isPublished !== undefined ? Boolean(data.isPublished) : false,
+    startAt: data.startAt ?? null,
+    endAt: data.endAt ?? null,
+  }
+}
+
+// 后台列表：按创建时间倒序（新发布的在最上）
+export async function getAnnouncements() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const items = await prisma.announcement.findMany({
+      orderBy: { createdAt: "desc" },
+    })
+    return { success: true, data: items }
+  } catch (error) {
+    if (isNextDynamicError(error)) throw error
+    console.error("Error loading announcements:", error)
+    return { success: false, error: "Failed to load announcements" }
+  }
+}
+
+export async function createAnnouncement(data: AnnouncementInput) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+
+  const validated = validateAnnouncementInput(data)
+  if ("error" in validated) return { success: false, error: validated.error }
+
+  try {
+    const created = await prisma.announcement.create({
+      data: normalizeAnnouncementInput(data),
+    })
+    revalidatePath("/")
+    await writeAuditLog("CREATE", "announcement", created.id, `发布公告：${created.title}`)
+    return { success: true, data: created }
+  } catch (error) {
+    if (isNextDynamicError(error)) throw error
+    console.error("Error creating announcement:", error)
+    return { success: false, error: "Failed to create announcement" }
+  }
+}
+
+export async function updateAnnouncement(id: string, data: AnnouncementInput) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+
+  const validated = validateAnnouncementInput(data)
+  if ("error" in validated) return { success: false, error: validated.error }
+
+  const existing = await prisma.announcement.findUnique({ where: { id } })
+  if (!existing) return { success: false, error: "ANNOUNCEMENT_NOT_FOUND" }
+
+  try {
+    const updated = await prisma.announcement.update({
+      where: { id },
+      data: normalizeAnnouncementInput(data),
+    })
+    revalidatePath("/")
+    await writeAuditLog("UPDATE", "announcement", id, `更新公告：${updated.title}`)
+    return { success: true, data: updated }
+  } catch (error) {
+    if (isNextDynamicError(error)) throw error
+    console.error("Error updating announcement:", error)
+    return { success: false, error: "Failed to update announcement" }
+  }
+}
+
+export async function deleteAnnouncement(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+
+  const existing = await prisma.announcement.findUnique({ where: { id } })
+  if (!existing) return { success: false, error: "ANNOUNCEMENT_NOT_FOUND" }
+
+  try {
+    await prisma.announcement.delete({ where: { id } })
+    revalidatePath("/")
+    await writeAuditLog("DELETE", "announcement", id, `删除公告：${existing.title}`)
+    return { success: true }
+  } catch (error) {
+    if (isNextDynamicError(error)) throw error
+    console.error("Error deleting announcement:", error)
+    return { success: false, error: "Failed to delete announcement" }
+  }
+}
+
+// 前台读取：取当前生效的**最新**一条（无则返回 null）。
+// 只读公开接口，不做鉴权；前台布局每次请求都会调用，查询走 isPublished 索引
+export async function getActiveAnnouncement() {
+  try {
+    const announcement = await prisma.announcement.findFirst({
+      where: announcementActiveWhere(),
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        linkUrl: true,
+        linkText: true,
+        updatedAt: true,
+      },
+    })
+    return announcement
+  } catch (error) {
+    if (isNextDynamicError(error)) throw error
+    console.error("Error loading active announcement:", error)
+    return null
+  }
+}
+
