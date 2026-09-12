@@ -329,8 +329,10 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
   // ================= 标准模式 (Standard Mode) =================
   return (
     <>
-    {/* 操作按钮移出 Link：交互元素不得嵌套（键盘 Enter 会命中外层链接而非按钮） */}
-    <div className="group relative block h-full select-none">
+    <Tooltip delayDuration={500}>
+      {/* 操作按钮移出 Link：交互元素不得嵌套（键盘 Enter 会命中外层链接而非按钮） */}
+      <TooltipTrigger asChild>
+        <div className="group relative block h-full select-none">
     <Link
       href={site.url}
       target="_blank"
@@ -351,10 +353,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
         {/* 网站标题与描述 */}
         <div className="flex-1 min-w-0 pr-6">
           <div className="flex items-center gap-1.5">
-            <h3
-              className="text-sm sm:text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-150 group-hover:text-primary line-clamp-1"
-              title={site.name}
-            >
+            <h3 className="text-sm sm:text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-150 group-hover:text-primary line-clamp-1">
               {site.name}
             </h3>
             {site.isPinned && (
@@ -364,10 +363,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
             )}
           </div>
           {site.description ? (
-            <p
-              className="mt-0.5 text-xs text-muted-foreground line-clamp-1 leading-relaxed"
-              title={site.description}
-            >
+            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1 leading-relaxed">
               {site.description}
             </p>
           ) : (
@@ -412,6 +408,18 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
       )}
     </div>
     </div>
+      </TooltipTrigger>
+      {site.description ? (
+        <TooltipContent
+          side="top"
+          align="center"
+          className="max-w-[280px] border border-white/10 bg-zinc-900/[0.76] px-3 py-2 text-left text-zinc-50 backdrop-blur-sm"
+        >
+          <p className="text-xs font-semibold leading-relaxed">{site.name}</p>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-200">{site.description}</p>
+        </TooltipContent>
+      ) : null}
+    </Tooltip>
     {/* 常挂载 + open 受控：条件卸载会砍掉 Radix 关闭动画并瞬间解除滚动锁定（页面跳动） */}
     <SiteDetailDialog
       site={site}
