@@ -9,6 +9,7 @@ import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { ExternalLink, Copy, Check, Pin, Pencil } from "lucide-react"
 import { useFaviconService, getProxiedFaviconUrl, proxyIconUrlIfPossible } from "@/hooks/use-favicon-service"
+import { useIconFallback } from "@/hooks/use-icon-fallback"
 import { useCardDensity } from "@/hooks/use-card-density"
 import { useSiteDetail } from "@/components/layout/site-detail-provider"
 import { useAdminAuth } from "@/components/auth/admin-auth-provider"
@@ -57,15 +58,18 @@ interface SiteCardProps {
 // 独立的网站图标组件：支持 Next.js Image 优化、占位符骨架屏动画与平滑渐变
 function SiteIcon({
   iconSrc,
+  fallbackSrc,
   name,
   size = "standard",
 }: {
   iconSrc: string | null
+  fallbackSrc?: string | null
   name: string
   size?: "standard" | "compact"
 }) {
   const t = useTranslations("siteCard")
   const [loadState, setLoadState] = useState<"loading" | "loaded" | "error">("loading")
+  const { src, handleError } = useIconFallback(iconSrc, fallbackSrc ?? null)
   const initial = useMemo(() => getInitial(name), [name])
   const isCompact = size === "compact"
 
@@ -94,16 +98,16 @@ function SiteIcon({
       className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40 transition-transform duration-300 ease-spring group-hover:scale-105 ${containerSizeClass}`}
     >
       {/* 骨架屏加载动画占位符 */}
-      {loadState === "loading" && iconSrc && (
+      {loadState === "loading" && src && (
         <div className="absolute inset-0 z-0 flex items-center justify-center bg-muted/60">
           <div className="h-full w-full animate-pulse bg-gradient-to-tr from-muted/80 via-muted to-muted/80 rounded" />
         </div>
       )}
 
       {/* Next.js 优化后的 Image 组件 */}
-      {iconSrc && loadState !== "error" && (
+      {src && loadState !== "error" && (
         <Image
-          src={iconSrc}
+          src={src}
           alt={t("iconAlt", { name })}
           width={pixelSize}
           height={pixelSize}
@@ -113,7 +117,10 @@ function SiteIcon({
           loading="lazy"
           unoptimized
           onLoad={() => setLoadState("loaded")}
-          onError={() => setLoadState("error")}
+          onError={() => {
+            // 直链失败先切代理重试，代理也失败才落错误占位
+            if (!handleError()) setLoadState("error")
+          }}
           className={`h-full w-full object-contain rounded-xs transition-all duration-300 ease-out ${
             loadState === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-90"
           }`}
@@ -121,7 +128,7 @@ function SiteIcon({
       )}
 
       {/* 加载失败或无图标时的首字母占位 */}
-      {(loadState === "error" || !iconSrc) && (
+      {(loadState === "error" || !src) && (
         <div
           className={`flex h-full w-full items-center justify-center font-bold text-muted-foreground select-none animate-fade-in ${
             isCompact ? "text-[11px]" : "text-sm"
@@ -168,6 +175,13 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
       return null
     }
   }, [site.iconUrl, site.url, service])
+
+  // 管理员自定义图标直链（未被 proxyIconUrlIfPossible 转成 /api/icon 的）在
+  // 直连失败时回退到站点图标代理，规避 CORP 拦截/混合内容/网络不可达
+  const iconFallbackSrc =
+    site.iconUrl && iconSrc && !iconSrc.startsWith("/api/icon")
+      ? `/api/icon?siteId=${site.id}`
+      : null
 
   const handleClick = () => {
     if (navigator.sendBeacon && !useDetailDialog) {
@@ -241,7 +255,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
                   : "border-border/80 bg-card hover:border-primary/40 hover:bg-accent/40"
               }`}
             >
-              <SiteIcon iconSrc={iconSrc} name={site.name} size="compact" />
+              <SiteIcon iconSrc={iconSrc} fallbackSrc={iconFallbackSrc} name={site.name} size="compact" />
 
               <div className="flex-1 min-w-0 pr-6 flex items-center gap-1.5">
                 <span className="truncate text-xs sm:text-sm font-medium text-foreground transition-colors group-hover:text-primary">
@@ -348,7 +362,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
           : "border-border/80 bg-card hover:border-primary/40 hover:bg-card"
       }`}>
         {/* 网站图标 */}
-        <SiteIcon iconSrc={iconSrc} name={site.name} size="standard" />
+        <SiteIcon iconSrc={iconSrc} fallbackSrc={iconFallbackSrc} name={site.name} size="standard" />
 
         {/* 网站标题与描述 */}
         <div className="flex-1 min-w-0 pr-6">

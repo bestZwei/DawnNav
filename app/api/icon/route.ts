@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { mkdir, readdir, readFile, rm, writeFile } from "fs/promises"
 import path from "path"
 import crypto from "crypto"
+import { prisma } from "@/lib/prisma"
 
 /**
  * Favicon 代理接口
  *
- * 两种模式:
+ * 三种模式:
  *  1. /api/icon?domain=github.com&s=favicon-im  按域名从 favicon 服务获取
  *  2. /api/icon?url=https://www.google.com/s2/favicons?...  代理白名单内的完整 URL
+ *  3. /api/icon?siteId=<站点ID>  代理该站点存储的 iconUrl 直链
  *
  * 命中内存/磁盘缓存时直接返回, 未命中时从上游拉取(带超时与 fallback 链),
  * 成功结果返回 30 天强缓存头, 失败结果短缓存 10 分钟避免反复打上游。
@@ -207,7 +209,22 @@ function isAllowedProxyUrl(value: string): boolean {
   }
 }
 
-async function fetchUpstream(url: string): Promise<{ body: Uint8Array<ArrayBuffer>; contentType: string } | null> {
+// 站点图标直链校验：仅要求 http/https 协议。目标 URL 取自站点表 iconUrl
+// （只有管理员可写），公网请求只能触发代理管理员存进库的地址，不构成开放代理；
+// 重定向的每一跳仍需重新过协议检查，防止被引向内网地址
+function isHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+  } catch {
+    return false
+  }
+}
+
+async function fetchUpstream(
+  url: string,
+  checkUrl: (value: string) => boolean = isAllowedProxyUrl
+): Promise<{ body: Uint8Array<ArrayBuffer>; contentType: string } | null> {
   // redirect:"manual"：默认 follow 会让白名单上游的 302 把请求引向任意/内网地址，
   // 与 domain-verify/webhook 的出站口径保持一致；重定向手动逐跳校验后跟随
   const MAX_REDIRECT_HOPS = 2
@@ -215,7 +232,7 @@ async function fetchUpstream(url: string): Promise<{ body: Uint8Array<ArrayBuffe
 
   try {
     for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
-      if (!isAllowedProxyUrl(current)) return null
+      if (!checkUrl(current)) return null
       const res = await fetch(current, {
         redirect: "manual",
         signal: AbortSignal.timeout(UPSTREAM_TIMEOUT),
@@ -269,6 +286,21 @@ async function resolveDomainIcon(domain: string, preferred: FaviconServiceKey): 
 
 async function resolveUrlIcon(url: string): Promise<CacheEntry> {
   const result = await fetchUpstream(url)
+  if (result) {
+    return {
+      body: result.body,
+      contentType: result.contentType,
+      etag: crypto.createHash("sha256").update(result.body).digest("hex").slice(0, 16),
+      expires: Date.now() + SUCCESS_TTL,
+      ok: true,
+    }
+  }
+  return failureEntry()
+}
+
+// 站点图标直链：不走白名单，仅校验协议（URL 来源受限于站点表）
+async function resolveSiteIcon(url: string): Promise<CacheEntry> {
+  const result = await fetchUpstream(url, isHttpUrl)
   if (result) {
     return {
       body: result.body,
@@ -339,7 +371,26 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams
   const domain = params.get("domain")
   const url = params.get("url")
+  const siteId = params.get("siteId")
   const serviceParam = params.get("s") as FaviconServiceKey | null
+
+  if (siteId) {
+    // 参数格式先收紧（CUID 等均为字母数字），避免任意字符串打进数据库查询
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(siteId)) {
+      return new NextResponse("Invalid siteId", { status: 400 })
+    }
+    const site = await prisma.site.findUnique({
+      where: { id: siteId },
+      select: { iconUrl: true },
+    })
+    if (!site?.iconUrl || !isHttpUrl(site.iconUrl)) {
+      return toResponse(failureEntry())
+    }
+    // 缓存键按 iconUrl 而非 siteId：管理员更换图标地址后旧缓存不会串味
+    const key = cacheKeyFor(`siteicon:${site.iconUrl}`)
+    const entry = await getEntry(key, () => resolveSiteIcon(site.iconUrl as string))
+    return toResponse(entry)
+  }
 
   if (url) {
     let parsed: URL

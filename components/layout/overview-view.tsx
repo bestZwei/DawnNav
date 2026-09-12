@@ -9,6 +9,7 @@ import {
   proxyIconUrlIfPossible,
   type FaviconService,
 } from "@/hooks/use-favicon-service"
+import { useIconFallback } from "@/hooks/use-icon-fallback"
 
 export interface OverviewSiteEntry {
   id: string
@@ -31,11 +32,13 @@ export interface OverviewData {
 }
 
 function OverviewSiteIcon({
+  siteId,
   name,
   iconUrl,
   siteUrl,
   service,
 }: {
+  siteId: string
   name: string
   iconUrl: string | null
   siteUrl: string
@@ -54,15 +57,20 @@ function OverviewSiteIcon({
     }
   }, [iconUrl, siteUrl, service])
 
+  // 直链图标失败时回退到站点图标代理
+  const fallbackSrc =
+    iconUrl && iconSrc && !iconSrc.startsWith("/api/icon") ? `/api/icon?siteId=${siteId}` : null
+  const { src, handleError } = useIconFallback(iconSrc, fallbackSrc)
+
   useEffect(() => {
     setLoadState(iconSrc ? "loading" : "error")
   }, [iconSrc])
 
   return (
     <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-[3px]">
-      {iconSrc && loadState !== "error" && (
+      {src && loadState !== "error" && (
         <Image
-          src={iconSrc}
+          src={src}
           alt=""
           width={16}
           height={16}
@@ -71,13 +79,15 @@ function OverviewSiteIcon({
           loading="lazy"
           unoptimized
           onLoad={() => setLoadState("loaded")}
-          onError={() => setLoadState("error")}
+          onError={() => {
+            if (!handleError()) setLoadState("error")
+          }}
           className={`h-full w-full object-contain transition-opacity duration-200 ${
             loadState === "loaded" ? "opacity-100" : "opacity-0"
           }`}
         />
       )}
-      {(loadState === "error" || !iconSrc) && (
+      {(loadState === "error" || !src) && (
         <span className="flex h-full w-full select-none items-center justify-center bg-muted text-[9px] font-bold text-muted-foreground">
           {initial}
         </span>
@@ -141,6 +151,7 @@ export function OverviewView({ data }: { data: OverviewData }) {
                   {category.sites.map((site) => (
                     <li key={site.id} className="flex min-w-0 items-center gap-2">
                       <OverviewSiteIcon
+                        siteId={site.id}
                         name={site.name}
                         iconUrl={site.iconUrl}
                         siteUrl={site.url}

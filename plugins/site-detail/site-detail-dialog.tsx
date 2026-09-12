@@ -26,6 +26,7 @@ import {
   getProxiedFaviconUrl,
   proxyIconUrlIfPossible,
 } from "@/hooks/use-favicon-service";
+import { useIconFallback } from "@/hooks/use-icon-fallback";
 import { useCardDensity } from "@/hooks/use-card-density";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -119,6 +120,16 @@ export function SiteDetailDialog({
         }
       })();
 
+  // 直链图标失败时回退到站点图标代理（服务端拉取，规避 CORP/混合内容拦截）
+  const iconFallbackSrc =
+    site.iconUrl && iconSrc && !iconSrc.startsWith("/api/icon")
+      ? `/api/icon?siteId=${site.id}`
+      : null;
+  const { src: iconResolvedSrc, handleError: handleIconError } = useIconFallback(
+    iconSrc,
+    iconFallbackSrc,
+  );
+
   const screenshots = detail?.screenshots ?? [];
   const hasContent = Boolean(detail?.detailContent?.trim());
   const isCompact = density === "compact";
@@ -186,13 +197,14 @@ export function SiteDetailDialog({
                       : "h-12 w-12 rounded-lg p-1.5",
                   )}
                 >
-                  {iconSrc ? (
+                  {iconResolvedSrc ? (
                     <Image
-                      src={iconSrc}
+                      src={iconResolvedSrc}
                       alt={site.name}
                       width={36}
                       height={36}
                       unoptimized
+                      onError={handleIconError}
                       className="h-full w-full object-contain"
                     />
                   ) : (
