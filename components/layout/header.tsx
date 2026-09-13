@@ -22,7 +22,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { useCardDensity } from "@/hooks/use-card-density"
 import { Search, X } from "lucide-react"
 import { fetchPublicSettings } from "@/lib/client-settings"
-import { PluginHeaderSlot, PluginSlot } from "@/lib/plugins/client"
+import { PluginHeaderSlot, PluginSlot, getStickyTopOffset } from "@/lib/plugins/client"
 import { CategoryIcon, CategoryIconBadge } from "@/components/category-icon"
 
 interface HeaderProps {
@@ -111,7 +111,8 @@ export function Header({
     if (document.body.hasAttribute("data-scroll-locked")) return false
     const target = document.getElementById(`category-${slug}`)
     if (!target) return false
-    const headerOffset = 80
+    // 吸顶高度动态取值：header + 可能存在的 bannerSlot 吸顶横幅（随插件启停变化）
+    const headerOffset = getStickyTopOffset()
     const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
     window.scrollTo(0, top)
     return true
@@ -281,7 +282,7 @@ export function Header({
       }`}
     >
       <div className="px-2 sm:px-4 lg:px-6">
-        <div className="flex h-16 items-center">
+        <div className="flex h-12 items-center">
           {/* 桌面端：Logo + 站点名 */}
           <div className={`hidden flex-shrink-0 items-center ${overviewMode ? "md:hidden" : "md:flex pr-6 sm:pr-8"}`}>
             <Link href="/" className="flex items-center space-x-2">
@@ -481,7 +482,7 @@ export function Header({
             {!overviewMode && (
               <>
                 <FaviconServiceToggle />
-                {/* 插件工具按钮槽（如诗词显隐切换） */}
+                {/* 插件工具按钮槽 */}
                 <PluginSlot position="headerTools" />
                 <LocaleToggle />
               </>

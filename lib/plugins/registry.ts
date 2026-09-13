@@ -1,9 +1,9 @@
 import { siteSubmissionPlugin } from "@/plugins/site-submission"
 import { browserExtensionPlugin } from "@/plugins/browser-extension"
-import { poetryCardPlugin } from "@/plugins/poetry-card"
 import { visitTrackingPlugin } from "@/plugins/visit-tracking"
 import { siteDetailPlugin } from "@/plugins/site-detail"
 import { aboutPagePlugin } from "@/plugins/about-page"
+import { quoteMarqueePlugin } from "@/plugins/quote-marquee"
 import type { PluginDefinition } from "./types"
 
 // 内置插件注册表：新增内置插件仅需 import 并在此数组登记一行。
@@ -11,10 +11,10 @@ import type { PluginDefinition } from "./types"
 export const pluginRegistry: PluginDefinition[] = [
   siteSubmissionPlugin,
   browserExtensionPlugin,
-  poetryCardPlugin,
   visitTrackingPlugin,
   siteDetailPlugin,
   aboutPagePlugin,
+  quoteMarqueePlugin,
 ]
 
 // 开发期断言：ID 唯一，构建期 fail-fast

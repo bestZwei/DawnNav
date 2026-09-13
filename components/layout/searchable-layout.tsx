@@ -12,10 +12,7 @@ import { OverviewView, type OverviewData } from "./overview-view"
 import { useCardDensity } from "@/hooks/use-card-density"
 import { Badge } from "@/components/ui/badge"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import {
-  PluginSlot,
-  useHomeSideActive,
-} from "@/lib/plugins/client"
+import { PluginBannerSlot, PluginSlot } from "@/lib/plugins/client"
 
 interface Site {
   id: string
@@ -56,8 +53,6 @@ export function SearchableLayout({
   children,
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  // homeSide 插件（如今日诗词）启用时，为右侧浮动卡片预留稳定槽位
-  const homeSideActive = useHomeSideActive()
   const { isOverview } = useCardDensity()
   const t = useTranslations("search")
 
@@ -118,10 +113,7 @@ export function SearchableLayout({
   }, [searchQuery, flatSites, pinyinMap])
 
   const isSearching = searchQuery.trim().length > 0
-  // 侧栏槽位宽度只跟随站长级插件开关；用户级显隐只切换浮动卡片，
-  // 不改变网站网格宽度，避免读取 localStorage 后首屏再次重排
   const overviewActive = Boolean(overviewData) && isOverview
-  const hasHomeSideSpace = homeSideActive && !overviewActive
 
   return (
     <SiteDetailProvider>
@@ -139,13 +131,13 @@ export function SearchableLayout({
         overviewData={overviewData}
       />
 
+      {/* 插件横幅槽位 - 吸顶固定在顶栏下方一行（如名言跑马灯），不随页面滚动消失 */}
+      <PluginBannerSlot />
+
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
         <div className="mx-auto max-w-[1600px] w-full">
-          {/* 插件 homeSide 槽位 - 固定在右上角（如今日诗词卡片） */}
-          {!overviewActive && <PluginSlot position="homeSide" />}
-
-          {/* 内容区域：为右侧侧栏插件预留空间 */}
-          <div className={hasHomeSideSpace ? "lg:pr-36 lg:pl-2" : "lg:pl-2"}>
+          {/* 内容区域 */}
+          <div className="lg:pl-2">
             {overviewActive ? (
               // 图鉴模式：首页正文整体替换为分享卡片样式的站点全览
               <OverviewView data={overviewData!} />

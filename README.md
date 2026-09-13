@@ -22,8 +22,8 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 - 🎨 Clean & Elegant - strictly follows shadcn/ui design guidelines
 - 🖼️ Smart Icons - auto-fetches site favicons, falls back to the first letter on failure
 - 🌓 Dark Mode - one-click toggle (Light / Dark / System)
-- 📜 **Daily Poetry** - fetches a poem of the day with elegant vertical layout
 - 📢 **Announcements** - admin-published maintenance notices or event previews shown as dismissible popups one after another, newest first (each announcement shown once per visitor)
+- 💬 **Quote Marquee** - sticky one-line ticker below the header scrolling quotes sentence by sentence (hover to pause)
 
 ### Admin Dashboard
 - 📊 Statistics - visit frequency charts, site rankings
@@ -311,13 +311,9 @@ pm2 save
 ├── components/           # React components
 │   ├── ui/              # shadcn/ui components
 │   ├── layout/          # Layout components
-│   │   ├── jinrishici-card.tsx         # Daily poetry card
-│   │   └── jinrishici-card-wrapper.tsx # Poetry card wrapper (animations)
 │   ├── admin/           # Admin components
-│   ├── poetry-toggle.tsx         # Poetry toggle button
 │   └── theme-provider/  # Theme provider
-├── hooks/
-│   └── use-poetry-toggle.ts  # Poetry visibility state hook
+├── plugins/             # Builtin plugins (site-submission, visit-tracking, ...)
 ├── lib/                 # Utilities and Server Actions
 ├── prisma/              # Database models and seed data
 ├── public/              # Static assets

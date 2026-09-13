@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Github, ArrowRight, BarChart3, FolderTree, Search, Smartphone, Moon, Scroll, Palette, ImageIcon } from "lucide-react"
+import { Github, ArrowRight, BarChart3, FolderTree, Search, Smartphone, Moon, Palette, ImageIcon } from "lucide-react"
 import {
   Field,
   FieldGroup,
@@ -200,18 +200,7 @@ function LoginForm() {
             </div>
           </div>
 
-          {/* 5. 古诗词 */}
-          <div className="absolute top-[30%] right-[8%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Scroll className="size-4 text-primary" />
-              <span className="text-xs font-medium">{t("featurePoetry")}</span>
-            </div>
-            <p className="text-[9px] text-muted-foreground leading-tight">
-              海内存知己<br />天涯若比邻
-            </p>
-          </div>
-
-          {/* 6. 暗黑模式 */}
+          {/* 5. 暗黑模式 */}
           <div className="absolute top-[36.5%] right-[18%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <Moon className="size-4 text-primary" />

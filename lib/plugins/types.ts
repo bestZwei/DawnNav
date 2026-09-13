@@ -25,10 +25,10 @@ export interface PluginDefinition {
   configFields: PluginConfigField[]
   // 前台 header 功能入口（如收录按钮）
   headerSlot?: ComponentType
-  // 前台 header 工具开关按钮（如诗词显隐切换）
+  // 前台 header 工具开关按钮
   headerToolsSlot?: ComponentType
-  // 首页右侧侧栏卡片（配合 useHomeSideVisible 协议）
-  homeSideSlot?: ComponentType
+  // 顶栏下方横幅条（如名言跑马灯）
+  bannerSlot?: ComponentType
   footerSlot?: ComponentType
   // 声明的后端能力 ID，供守卫与文档使用
   serverActionIds?: string[]

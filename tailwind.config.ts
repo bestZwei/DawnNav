@@ -162,10 +162,15 @@ const config: Config = {
   				'0%, 100%': { opacity: '1', transform: 'scale(1)' },
   				'50%': { opacity: '0.6', transform: 'scale(1.08)' }
   			},
-  			'unroll-in': {
-  				from: { opacity: '0', transform: 'scale(0.88) translateY(-10px)' },
-  				to: { opacity: '1', transform: 'scale(1) translateY(0)' }
-  			},
+			'unroll-in': {
+				from: { opacity: '0', transform: 'scale(0.88) translateY(-10px)' },
+				to: { opacity: '1', transform: 'scale(1) translateY(0)' }
+			},
+			'marquee': {
+				// 跑马灯行程：起点在视窗右缘外（100vw），终点为文本自身宽度全部移出（-100%）
+				from: { transform: 'translateX(100vw)' },
+				to: { transform: 'translateX(-100%)' }
+			},
   			'unroll-out': {
   				from: { opacity: '1', transform: 'scale(1) translateY(0)' },
   				to: { opacity: '0', transform: 'scale(0.88) translateY(-10px)' }
@@ -202,6 +207,7 @@ const config: Config = {
   			'shake': 'shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both',
   			'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
   			'unroll-in': 'unroll-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+			'marquee': 'marquee 30s linear both',
   			'unroll-out': 'unroll-out 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
   			'bounce-subtle': 'bounce-subtle 0.3s cubic-bezier(0.34, 1.4, 0.64, 1)',
   			'pulse-subtle': 'pulse_subtle 3s ease-in-out infinite'

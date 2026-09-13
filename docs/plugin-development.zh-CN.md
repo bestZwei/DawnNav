@@ -177,28 +177,22 @@ export const pluginRegistry: PluginDefinition[] = [
 | slot 字段 | 位置 | 典型用途 |
 |-----------|------|----------|
 | `headerSlot` | 前台页头工具区 | 功能入口（收录按钮） |
-| `headerToolsSlot` | 前台页头工具区（开关按钮位） | 用户级显隐切换（诗词按钮） |
-| `homeSideSlot` | 首页右侧固定侧栏 | 浮动卡片（今日诗词） |
+| `headerToolsSlot` | 前台页头工具区（开关按钮位） | 用户级显隐切换 |
+| `bannerSlot` | 吸顶固定在顶栏下方的通栏细条（组件根节点需带 `data-plugin-banner`，供 `getStickyTopOffset()` 动态测量） | 一行滚动内容（名言跑马灯） |
 | `footerSlot` | 页脚 | 链接 / Markdown 区块 |
 
-`homeSideSlot` 配合可见性协议使用：
-
-- `useBuiltinPluginEnabled(id)`：查询插件是否启用
-- `useHomeSideActive()`：是否存在启用中的 homeSide 插件（核心布局据此预留右侧空间）
-- `useHomeSideVisible(enabled)`：用户级显隐（localStorage + 自定义事件），返回 `{ visible, mounted, setUserVisible }`
-
-框架本身不限定每个槽位的插件数量；同一时刻 homeSide 只应有一个插件展示卡片（产品约定）。
+`useBuiltinPluginEnabled(id)`：查询内置插件是否启用（任何槽位组件均可用）。
 
 ### 3b. 已有内置插件清单
 
 | 插件 ID | 功能 | 迁移状态 |
 |---------|------|----------|
 | `site-submission` | 访客投稿网址，站长审核后展示 | 插件化 |
-| `poetry-card` | 首页右上角今日诗词卡片 | 插件化 |
 | `visit-tracking` | 站点访问埋点 + 后台访问统计 | 插件化 |
 | `site-detail` | 站点卡片二级详情弹窗 | 插件化（数据获取 getSiteDetail 属于核心，弹窗 UI 属于插件） |
 | `about-page` | 前台「关于」页面入口（页脚链接 + sitemap） | 插件化（内容仍存 SystemSettings，支持工作区覆盖） |
 | `browser-extension` | 浏览器扩展直连收录：令牌鉴权 API（/api/extension），收录直接发布；配套 Chrome 扩展见 `extension/` | 插件化（令牌存插件配置） |
+| `quote-marquee` | 顶栏下方一行跑马灯逐句滚动展示名言（素材为通用「两行一条」格式，见 `scripts/normalize-quotes.mjs`） | 插件化 |
 
 ### 4. 后端能力（actions.ts）
 

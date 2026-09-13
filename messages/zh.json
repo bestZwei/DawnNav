@@ -49,8 +49,8 @@
     "provider": "智能图标由 {name} 提供服务",
     "srToggle": "切换图标服务"
   },
-  "poetry": {
-    "show": "显示古诗词"
+  "quoteMarquee": {
+    "badge": "名言"
   },
   "header": {
     "categoriesSr": "分类",
@@ -246,7 +246,6 @@
       "featureVisits": "访问量",
       "featureSearch": "实时搜索",
       "featureMsResponse": "毫秒级响应",
-      "featurePoetry": "古诗词展示",
       "featureDark": "暗黑模式",
       "featureLight": "浅色",
       "featureDarkShort": "深色",
@@ -654,8 +653,6 @@
       "defaultLanguageHint": "未设置语言偏好的访客将使用此语言",
       "trackingLabel": "启用访问统计",
       "trackingHint": "记录网站访问次数，用于数据统计",
-      "poetryLabel": "启用今日诗词",
-      "poetryHint": "开启后前台右上角展示今日诗词卡片，访客仍可自行隐藏",
       "githubLabel": "GitHub 仓库地址",
       "githubHint": "将显示在登录页面底部，用于项目展示或源码分享",
       "footerLabel": "底部信息",
@@ -886,13 +883,13 @@
         "SUBMIT_FAILED": "提交失败，请稍后重试"
       }
     },
-    "poetryCard": {
-      "name": "今日诗词",
-      "description": "在首页右上角展示诗词卡片，用户可在页头工具栏控制显隐"
-    },
     "visitTracking": {
       "name": "访问统计",
       "description": "记录站点访问并生成后台统计：访问排行、频次图表、今日环比"
+    },
+    "quoteMarquee": {
+      "name": "名言跑马灯",
+      "description": "在顶栏下方以一行跑马灯逐句滚动展示素材句子，鼠标悬停可暂停"
     },
     "siteDetail": {
       "name": "站点详情弹窗",

@@ -73,50 +73,6 @@ export function useBuiltinPluginEnabled(id: string): boolean {
   return plugins.builtinEnabledIds.includes(id)
 }
 
-// ---------- 首页侧栏可见性协议 ----------
-
-// homeSide 槽位（首页右侧栏）的「用户级」可见性协议：
-// 站长级启停走插件开关，用户级显隐统一走 localStorage + 自定义事件，
-// 核心布局据此决定是否为侧栏预留空间
-const HOME_SIDE_VISIBLE_KEY = "poetry-visible"
-const HOME_SIDE_EVENT = "poetry-visible-change"
-
-export function useHomeSideVisible(enabled: boolean) {
-  const [visible, setVisible] = useState(true)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    const saved = localStorage.getItem(HOME_SIDE_VISIBLE_KEY)
-    setVisible(saved === null ? true : saved === "true")
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    const sync = () => {
-      const saved = localStorage.getItem(HOME_SIDE_VISIBLE_KEY)
-      setVisible(saved === null ? true : saved === "true")
-    }
-    window.addEventListener(HOME_SIDE_EVENT, sync)
-    return () => window.removeEventListener(HOME_SIDE_EVENT, sync)
-  }, [])
-
-  const setUserVisible = (value: boolean) => {
-    setVisible(value)
-    localStorage.setItem(HOME_SIDE_VISIBLE_KEY, String(value))
-    window.dispatchEvent(new CustomEvent(HOME_SIDE_EVENT))
-  }
-
-  return { visible: mounted && enabled && visible, mounted, setUserVisible }
-}
-
-// 是否存在启用中的 homeSide 插件（核心布局据此为右侧侧栏预留空间）
-export function useHomeSideActive(): boolean {
-  const plugins = useClientPlugins()
-  return pluginRegistry.some(
-    (def) => def.homeSideSlot && plugins.builtinEnabledIds.includes(def.id)
-  )
-}
-
 // ---------- 上传插件通用渲染器（声明式四形态） ----------
 
 function IframeSlotDialog({
@@ -242,7 +198,7 @@ export function ManifestSlotView({
 export function PluginSlot({
   position,
 }: {
-  position: "headerTools" | "homeSide"
+  position: "headerTools"
 }) {
   const plugins = useClientPlugins()
 
@@ -251,16 +207,43 @@ export function PluginSlot({
       {pluginRegistry
         .filter(
           (def) =>
-            plugins.builtinEnabledIds.includes(def.id) &&
-            (position === "headerTools" ? def.headerToolsSlot : def.homeSideSlot)
+            plugins.builtinEnabledIds.includes(def.id) && def.headerToolsSlot
         )
         .map((def) => {
-          const Slot =
-            position === "headerTools" ? def.headerToolsSlot! : def.homeSideSlot!
+          const Slot = def.headerToolsSlot!
           return <Slot key={def.id} />
         })}
     </>
   )
+}
+
+// 顶栏下方横幅槽：渲染启用中插件的 banner 组件（如名言跑马灯）
+export function PluginBannerSlot() {
+  const plugins = useClientPlugins()
+
+  return (
+    <>
+      {pluginRegistry
+        .filter(
+          (def) => plugins.builtinEnabledIds.includes(def.id) && def.bannerSlot
+        )
+        .map((def) => {
+          const Slot = def.bannerSlot!
+          return <Slot key={def.id} />
+        })}
+    </>
+  )
+}
+
+// 吸顶占用高度：sticky header + 已吸顶的 bannerSlot 横幅（带 data-plugin-banner 标记）+ 呼吸间距。
+// 供锚点滚动与滚动高亮的判定线取值——横幅随插件启停出现/消失，必须动态测量而非写死常量。
+export function getStickyTopOffset(): number {
+  if (typeof document === "undefined") return 96
+  const header = document.querySelector("header")?.offsetHeight ?? 48
+  const banner = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-plugin-banner]")
+  ).reduce((sum, el) => sum + el.offsetHeight, 0)
+  return header + banner + 16
 }
 
 export function PluginHeaderSlot() {

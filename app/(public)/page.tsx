@@ -56,7 +56,7 @@ export default async function HomePage() {
         {categories && categories.length > 0 ? (
           <>
             {categories.map((category, index) => (
-            <section key={category.id} id={`category-${category.slug}`} className="scroll-mt-20">
+            <section key={category.id} id={`category-${category.slug}`} className="scroll-mt-[96px]">
               <div className="flex items-center justify-between mb-3.5">
                 <div className="flex items-center gap-2.5">
                   {category.icon && (

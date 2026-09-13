@@ -49,8 +49,8 @@
     "provider": "Favicons served by {name}",
     "srToggle": "Switch favicon service"
   },
-  "poetry": {
-    "show": "Show daily poetry"
+  "quoteMarquee": {
+    "badge": "Quotes"
   },
   "header": {
     "categoriesSr": "Categories",
@@ -246,7 +246,6 @@
       "featureVisits": "Visits",
       "featureSearch": "Instant search",
       "featureMsResponse": "Millisecond response",
-      "featurePoetry": "Daily poetry",
       "featureDark": "Dark mode",
       "featureLight": "Light",
       "featureDarkShort": "Dark",
@@ -654,8 +653,6 @@
       "defaultLanguageHint": "Used for visitors without a language preference",
       "trackingLabel": "Enable visit tracking",
       "trackingHint": "Record site visits for analytics",
-      "poetryLabel": "Enable daily poetry",
-      "poetryHint": "When on, a daily poetry card appears at the top right; visitors can still hide it individually",
       "githubLabel": "GitHub repository URL",
       "githubHint": "Shown at the bottom of the login page",
       "footerLabel": "Footer",
@@ -886,13 +883,13 @@
         "SUBMIT_FAILED": "Submission failed, please try again later"
       }
     },
-    "poetryCard": {
-      "name": "Daily Poetry",
-      "description": "Shows a poetry card at the top-right of the homepage with a header toolbar toggle"
-    },
     "visitTracking": {
       "name": "Visit Tracking",
       "description": "Records site visits and powers admin statistics: rankings, frequency chart, today vs. yesterday"
+    },
+    "quoteMarquee": {
+      "name": "Quote Marquee",
+      "description": "Scrolls through quotes in a slim one-line ticker below the header; hover to pause"
     },
     "siteDetail": {
       "name": "Site Detail Dialog",

@@ -177,28 +177,22 @@ Zero core changes: header/footer slots and the admin page discover the new plugi
 | Slot field | Position | Typical use |
 |-----------|----------|-------------|
 | `headerSlot` | Frontend header toolbar | Feature entries (submission button) |
-| `headerToolsSlot` | Frontend header toolbar (toggle position) | User-level visibility toggles (poetry button) |
-| `homeSideSlot` | Homepage right-side floating panel | Floating cards (daily poetry) |
+| `headerToolsSlot` | Frontend header toolbar (toggle position) | User-level visibility toggles |
+| `bannerSlot` | Sticky slim bar pinned below the sticky header (gets `data-plugin-banner`, picked up by `getStickyTopOffset()`) | One-line tickers (quote marquee) |
 | `footerSlot` | Footer | Links / markdown blocks |
 
-`homeSideSlot` works with the visibility protocol:
-
-- `useBuiltinPluginEnabled(id)`: whether a plugin is enabled
-- `useHomeSideActive()`: whether any homeSide plugin is enabled (core reserves right-side space accordingly)
-- `useHomeSideVisible(enabled)`: user-level visibility (localStorage + custom event), returns `{ visible, mounted, setUserVisible }`
-
-Multiple plugins may register for a slot; by product convention only one homeSide card shows at a time.
+`useBuiltinPluginEnabled(id)`: whether a builtin plugin is enabled (available to any slot component).
 
 ### 2.3b Builtin plugin inventory
 
 | Plugin ID | Feature | Status |
 |---------|------|----------|
 | `site-submission` | Visitor website submission with admin review | Pluginized |
-| `poetry-card` | Daily poetry card on the homepage | Pluginized |
 | `visit-tracking` | Visit tracking + admin visit statistics | Pluginized |
 | `site-detail` | Secondary detail dialog on site cards | Pluginized (data fetching `getSiteDetail` stays core; dialog UI belongs to the plugin) |
 | `about-page` | Frontend About page entry (footer link + sitemap) | Pluginized (content stays in SystemSettings with workspace overrides) |
 | `browser-extension` | Direct collection via the companion browser extension: token-authenticated API (`/api/extension`), submissions publish immediately; see `extension/` | Pluginized (token stored in plugin config) |
+| `quote-marquee` | One-line quote ticker scrolling below the header (material: generic two-lines-per-entry format, see `scripts/normalize-quotes.mjs`) | Pluginized |
 
 ### 2.4 Backend capabilities (actions.ts)
 

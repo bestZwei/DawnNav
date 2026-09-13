@@ -54,7 +54,7 @@ export default async function RootLayout({
         <WorkspaceMarker />
       </head>
       <body className={inter.className}>
-        {/* 资源提示：提前建立第三方连接，降低图标接口的首字节延迟（诗词接口 preconnect 随插件化移除）。
+        {/* 资源提示：提前建立第三方连接，降低图标接口的首字节延迟。
             管理员自定义代码（头部/尾部）已迁移至前台布局 app/(public)/layout.tsx，仅对导航页注入 */}
         <link rel="dns-prefetch" href="https://favicon.im" />
         <link rel="dns-prefetch" href="https://www.google.com" />
