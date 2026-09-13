@@ -51,7 +51,7 @@ export default async function HomePage() {
         siteName={settings?.siteName}
         overviewData={overviewData}
       >
-      <div className="space-y-8">
+      <div className="space-y-4">
         {/* 分类内容 */}
         {categories && categories.length > 0 ? (
           <>
@@ -79,7 +79,7 @@ export default async function HomePage() {
                 </div>
               )}
 
-              {index < categories.length - 1 && <Separator className="mt-8 opacity-60" />}
+              {index < categories.length - 1 && <Separator className="mt-4 opacity-60" />}
             </section>
           ))}
           </>

@@ -134,7 +134,7 @@ export function SearchableLayout({
       {/* 插件横幅槽位 - 吸顶固定在顶栏下方一行（如名言跑马灯），不随页面滚动消失 */}
       <PluginBannerSlot />
 
-      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 pb-8 pt-4">
         <div className="mx-auto max-w-[1600px] w-full">
           {/* 内容区域 */}
           <div className="lg:pl-2">

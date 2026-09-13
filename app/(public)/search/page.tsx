@@ -33,7 +33,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         initialQuery={query}
       />
 
-      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 page-enter">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 pb-8 pt-4 page-enter">
         <div className="mx-auto max-w-7xl w-full">
           <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight">{t("resultsTitle")}</h1>
