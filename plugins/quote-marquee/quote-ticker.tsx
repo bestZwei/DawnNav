@@ -25,8 +25,26 @@ export function QuoteTicker() {
   const [index, setIndex] = useState(0)
   const [durationSeconds, setDurationSeconds] = useState(0)
   const [motionAvailable, setMotionAvailable] = useState(false)
+  const [paused, setPaused] = useState(false)
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  // 洗牌袋：每条随机抽取且一整圈内不重复；袋空重洗时避开刚播过的那条，防止跨圈相接
+  const deckRef = useRef<number[]>([])
+
+  const drawNextIndex = useCallback((current: number, total: number) => {
+    if (deckRef.current.length === 0) {
+      const deck = Array.from({ length: total }, (_, i) => i)
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[deck[i], deck[j]] = [deck[j], deck[i]]
+      }
+      if (deck[0] === current && deck.length > 1) {
+        ;[deck[0], deck[1]] = [deck[1], deck[0]]
+      }
+      deckRef.current = deck
+    }
+    return deckRef.current.pop() ?? current
+  }, [])
 
   useEffect(() => {
     if (!enabled) return
@@ -36,20 +54,31 @@ export function QuoteTicker() {
       const list = mod.default as QuoteEntry[]
       if (list.length > 0) {
         setEntries(list)
-        // 随机起点：长语料每次进入页面从不同句子开始
-        setIndex(Math.floor(Math.random() * list.length))
+        deckRef.current = []
+        // 随机起点：洗牌袋首抽，每次进入页面从不同句子开始
+        setIndex(drawNextIndex(-1, list.length))
       }
     })
     return () => {
       cancelled = true
     }
-  }, [enabled])
+  }, [enabled, drawNextIndex])
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const killedByGlobalToggle =
       document.documentElement.getAttribute("data-animations") === "false"
     setMotionAvailable(!reduced && !killedByGlobalToggle)
+  }, [])
+
+  // 后台标签页不渲染帧，animationend 会被延迟到切回时才补发，导致回来先空白卡住再重头滚；
+  // 离开时暂停动画（时间线随之冻结，事件不再积压），切回后从原进度无缝继续。
+  // 无条件挂载：静态轮换兜底路径也需要感知可见性
+  useEffect(() => {
+    setPaused(document.hidden)
+    const sync = () => setPaused(document.hidden)
+    document.addEventListener("visibilitychange", sync)
+    return () => document.removeEventListener("visibilitychange", sync)
   }, [])
 
   // 行程 = 视窗宽（keyframes 起点 translateX(100vw)）+ 文本宽，按恒定速度折算时长，
@@ -65,18 +94,18 @@ export function QuoteTicker() {
   }, [entries, index, motionAvailable])
 
   const handleAnimationEnd = useCallback(() => {
-    setIndex((i) => (i + 1) % (entries?.length || 1))
-  }, [entries])
+    setIndex((i) => drawNextIndex(i, entries?.length || 1))
+  }, [entries, drawNextIndex])
 
-  // 静态轮换兜底：动画不可用时定时换一条
+  // 静态轮换兜底：动画不可用时定时换一条；后台节流会让定时器积压，隐藏时不推进
   useEffect(() => {
-    if (!entries || motionAvailable) return
+    if (!entries || motionAvailable || paused) return
     const timer = setInterval(
-      () => setIndex((i) => (i + 1) % entries.length),
+      () => setIndex((i) => drawNextIndex(i, entries.length)),
       STATIC_ROTATE_SECONDS * 1000
     )
     return () => clearInterval(timer)
-  }, [entries, motionAvailable])
+  }, [entries, motionAvailable, paused, drawNextIndex])
 
   if (!enabled) return null
   const entry = entries?.[index % entries.length]
@@ -105,7 +134,15 @@ export function QuoteTicker() {
                 motionAvailable &&
                   "animate-marquee will-change-transform group-hover:[animation-play-state:paused]"
               )}
-              style={durationSeconds > 0 ? { animationDuration: `${durationSeconds}s` } : undefined}
+              style={
+                durationSeconds > 0 || paused
+                  ? {
+                      ...(durationSeconds > 0 ? { animationDuration: `${durationSeconds}s` } : null),
+                      // 内联 paused 仅在隐藏时存在，不干扰悬停暂停类
+                      ...(motionAvailable && paused ? { animationPlayState: "paused" } : null),
+                    }
+                  : undefined
+              }
             >
               <span className="text-sm text-foreground/80">{entry.text}</span>
               {entry.meta && (
