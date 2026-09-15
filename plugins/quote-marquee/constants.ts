@@ -12,3 +12,11 @@ export const MAX_DURATION_SECONDS = 90
 
 // 静态轮换间隔（秒）：全局动效关闭或系统减弱动态时的兜底展示节奏
 export const STATIC_ROTATE_SECONDS = 12
+
+// 兜底动画时长（秒）：与 tailwind.config.ts 的 animate-marquee 默认值保持一致。
+// 仅在挂载后量宽完成前短暂使用；自愈定时器亦以此为基准
+export const DEFAULT_DURATION_SECONDS = 30
+
+// 隐藏超过该时长（毫秒）后回到前台才重跑当前条目：
+// 短暂切换（几帧内）不打断正在滚动的句子
+export const RESUMABLE_HIDDEN_MS = 1000

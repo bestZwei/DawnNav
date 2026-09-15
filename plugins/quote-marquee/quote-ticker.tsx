@@ -5,7 +5,15 @@ import { Quote } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useBuiltinPluginEnabled } from "@/lib/plugins/client"
 import { cn } from "@/lib/utils"
-import { PLUGIN_ID, MAX_DURATION_SECONDS, MIN_DURATION_SECONDS, STATIC_ROTATE_SECONDS, TICKER_SPEED_PXS } from "./constants"
+import {
+  PLUGIN_ID,
+  MAX_DURATION_SECONDS,
+  MIN_DURATION_SECONDS,
+  STATIC_ROTATE_SECONDS,
+  TICKER_SPEED_PXS,
+  DEFAULT_DURATION_SECONDS,
+  RESUMABLE_HIDDEN_MS,
+} from "./constants"
 
 // 语料条目：通用「两行一条」格式（正文 + 其他/出处），由 scripts/normalize-quotes.mjs 编译
 interface QuoteEntry {
@@ -30,6 +38,11 @@ export function QuoteTicker() {
   const trackRef = useRef<HTMLDivElement>(null)
   // 洗牌袋：每条随机抽取且一整圈内不重复；袋空重洗时避开刚播过的那条，防止跨圈相接
   const deckRef = useRef<number[]>([])
+  // 动画重跑计数：改变它会让当前条目以新 key 重新挂载，动画从右缘重头开始。
+  // 用于从隐藏/bfcache 恢复时强制脱离被浏览器冻结的时间线
+  const [runId, setRunId] = useState(0)
+  // 进入隐藏的时刻，用于判断是「短暂切换」还是「长时间冻结」
+  const hiddenAtRef = useRef(0)
 
   const drawNextIndex = useCallback((current: number, total: number) => {
     if (deckRef.current.length === 0) {
@@ -72,13 +85,38 @@ export function QuoteTicker() {
   }, [])
 
   // 后台标签页不渲染帧，animationend 会被延迟到切回时才补发，导致回来先空白卡住再重头滚；
-  // 离开时暂停动画（时间线随之冻结，事件不再积压），切回后从原进度无缝继续。
+  // 离开时暂停动画（时间线随之冻结，事件不再积压），切回后重跑当前条目。
+  // 恢复路径必须同时挂 visibilitychange 与 pageshow：关闭标签页后重新打开、
+  // 前进后退走 bfcache 恢复时，浏览器不保证补发 visibilitychange，
+  // 只靠它会让动画永久停在冻结处（表现为跑马灯卡住不动）。
   // 无条件挂载：静态轮换兜底路径也需要感知可见性
   useEffect(() => {
-    setPaused(document.hidden)
-    const sync = () => setPaused(document.hidden)
+    const resume = () => {
+      setPaused(false)
+      // 冻结超过阈值才重跑，避免快速切窗打断正在滚动的句子
+      if (Date.now() - hiddenAtRef.current > RESUMABLE_HIDDEN_MS) {
+        setRunId((id) => id + 1)
+      }
+    }
+    const hide = () => {
+      hiddenAtRef.current = Date.now()
+      setPaused(true)
+    }
+
+    if (document.hidden) hide()
+
+    const sync = () => (document.hidden ? hide() : resume())
+    const onPageShow = () => {
+      // 初始加载也会触发 pageshow，此时通常尚无条目在跑，重跑无副作用
+      if (!document.hidden) resume()
+    }
+
     document.addEventListener("visibilitychange", sync)
-    return () => document.removeEventListener("visibilitychange", sync)
+    window.addEventListener("pageshow", onPageShow)
+    return () => {
+      document.removeEventListener("visibilitychange", sync)
+      window.removeEventListener("pageshow", onPageShow)
+    }
   }, [])
 
   // 行程 = 视窗宽（keyframes 起点 translateX(100vw)）+ 文本宽，按恒定速度折算时长，
@@ -92,6 +130,19 @@ export function QuoteTicker() {
       Math.min(Math.max(travel / TICKER_SPEED_PXS, MIN_DURATION_SECONDS), MAX_DURATION_SECONDS)
     )
   }, [entries, index, motionAvailable])
+
+  // 自愈兜底：动画在后台被冻结或 animationend 丢失时会停在半途且永不推进。
+  // 正常路径下 animationend 会先于本定时器触发并推进 index、连带清理计时器；
+  // 一旦超时仍未推进，说明动画卡死，直接换下一条（无需刷新页面）
+  useEffect(() => {
+    if (!motionAvailable || paused || !entries) return
+    const seconds = durationSeconds > 0 ? durationSeconds : DEFAULT_DURATION_SECONDS
+    const timer = setTimeout(
+      () => setIndex((i) => drawNextIndex(i, entries.length)),
+      (seconds + 1.5) * 1000
+    )
+    return () => clearTimeout(timer)
+  }, [motionAvailable, paused, entries, durationSeconds, index, runId, drawNextIndex])
 
   const handleAnimationEnd = useCallback(() => {
     setIndex((i) => drawNextIndex(i, entries?.length || 1))
@@ -126,7 +177,7 @@ export function QuoteTicker() {
         >
           {entry && (
             <div
-              key={index}
+              key={`${index}-${runId}`}
               ref={motionAvailable ? trackRef : undefined}
               onAnimationEnd={motionAvailable ? handleAnimationEnd : undefined}
               className={cn(
