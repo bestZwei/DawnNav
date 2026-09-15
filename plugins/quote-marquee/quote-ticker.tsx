@@ -7,7 +7,6 @@ import { useBuiltinPluginEnabled } from "@/lib/plugins/client"
 import { cn } from "@/lib/utils"
 import {
   PLUGIN_ID,
-  MAX_DURATION_SECONDS,
   MIN_DURATION_SECONDS,
   STATIC_ROTATE_SECONDS,
   TICKER_SPEED_PXS,
@@ -119,16 +118,15 @@ export function QuoteTicker() {
     }
   }, [])
 
-  // 行程 = 视窗宽（keyframes 起点 translateX(100vw)）+ 文本宽，按恒定速度折算时长，
-  // 超长语录封顶加速；量宽在挂载后进行，期间以 tailwind 默认 30s 兜底，误差不足一帧
+  // 行程 = 视窗宽（keyframes 起点 translateX(100vw)）+ 文本宽，按恒定速度折算时长。
+  // 不设上限：长句仅时长更长，px 速度与短句一致（避免「长句子更快」的观感）。
+  // 量宽在挂载后进行，期间以 tailwind 默认 30s 兜底，误差不足一帧
   useEffect(() => {
     if (!entries || !motionAvailable) return
     const track = trackRef.current
     if (!track) return
     const travel = window.innerWidth + track.scrollWidth
-    setDurationSeconds(
-      Math.min(Math.max(travel / TICKER_SPEED_PXS, MIN_DURATION_SECONDS), MAX_DURATION_SECONDS)
-    )
+    setDurationSeconds(Math.max(travel / TICKER_SPEED_PXS, MIN_DURATION_SECONDS))
   }, [entries, index, motionAvailable])
 
   // 自愈兜底：动画在后台被冻结或 animationend 丢失时会停在半途且永不推进。
