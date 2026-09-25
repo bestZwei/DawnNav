@@ -28,6 +28,7 @@ import {
 } from "@/hooks/use-favicon-service";
 import { useIconFallback } from "@/hooks/use-icon-fallback";
 import { useCardDensity } from "@/hooks/use-card-density";
+import { useDialogHistoryBack } from "@/hooks/use-dialog-history-back";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
@@ -134,9 +135,22 @@ export function SiteDetailDialog({
   const hasContent = Boolean(detail?.detailContent?.trim());
   const isCompact = density === "compact";
 
+  // 返回键层级：截图 Lightbox → 详情弹窗 → 离开页面。
+  // 两层各自压入/消费历史条目，返回键逐级关闭而非直接离开页面
+  const requestDialogClose = useDialogHistoryBack(open, () =>
+    onOpenChange(false),
+  );
+  const requestLightboxClose = useDialogHistoryBack(
+    lightboxShot !== null,
+    () => setLightboxShot(null),
+  );
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => (next ? onOpenChange(true) : requestDialogClose())}
+      >
         {/* 宽版布局：左右分栏，移动端单列堆叠 */}
         <DialogContent className="max-w-[min(96vw,1100px)] w-full gap-0 overflow-hidden rounded-xl p-0">
           <DialogTitle className="sr-only">{site.name}</DialogTitle>
@@ -310,7 +324,7 @@ export function SiteDetailDialog({
       {/* 截图 Lightbox 全屏预览 */}
       <DialogPrimitive.Root
         open={lightboxShot !== null}
-        onOpenChange={(o) => !o && setLightboxShot(null)}
+        onOpenChange={(o) => !o && requestLightboxClose()}
       >
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
