@@ -6,6 +6,12 @@ import { searchSites, getAllCategories } from "@/lib/actions"
 import { getCachedDisplaySettings } from "@/lib/workspace-render"
 import { redirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
+import type { Metadata } from "next"
+
+// 搜索结果页参数无限组合，属于应排除收录的薄内容页（robots.txt 同步屏蔽）
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+}
 
 interface SearchPageProps {
   searchParams: Promise<{

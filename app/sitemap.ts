@@ -1,8 +1,8 @@
 import { MetadataRoute } from "next"
-import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { getCurrentWorkspace } from "@/lib/workspace"
 import { getAboutPage } from "@/lib/actions"
+import { getRequestBaseUrl } from "@/lib/site-url"
 
 // sitemap 按当前请求域名对应的工作区输出：baseUrl 取实际 Host，
 // 分类页仅输出当前工作区下已发布的分类
@@ -64,24 +64,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 数据库不可用时，只返回静态页面
     console.warn("Database unavailable during sitemap generation, returning static pages only")
     return staticPages
-  }
-}
-
-// 从请求头推导站点根地址（反代场景读 x-forwarded-proto/host）
-async function getRequestBaseUrl(): Promise<string> {
-  const fallback = process.env.NEXTAUTH_URL || "http://localhost:3000"
-  try {
-    const h = await headers()
-    const host =
-      h.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-      h.get("x-workspace-host") ||
-      h.get("host")
-    if (!host) return fallback
-    const proto =
-      h.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
-      (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https")
-    return `${proto}://${host}`
-  } catch {
-    return fallback
   }
 }

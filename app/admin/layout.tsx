@@ -10,7 +10,12 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata")
 
   return {
-    title: `${settings?.siteName || "DawnNav"} - ${t("adminTitleSuffix")}`,
+    // absolute：根布局已设 title.template，后台标题不能被再次拼接站点名后缀
+    title: {
+      absolute: `${settings?.siteName || "DawnNav"} - ${t("adminTitleSuffix")}`,
+    },
+    // 后台不参与收录，明确 noindex
+    robots: { index: false, follow: false },
     description: settings?.siteDescription || t("descriptionFallback"),
     icons: {
       icon: settings?.favicon || "/favicon.ico",

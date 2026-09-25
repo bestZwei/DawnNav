@@ -6,12 +6,35 @@ import { getCachedDisplaySettings } from "@/lib/workspace-render"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { getTranslations } from "next-intl/server"
+import type { Metadata } from "next"
+import { buildShareOpenGraph } from "@/lib/share-metadata"
 
 // 语言解析依赖请求级 Cookie（i18n/request.ts），页面按请求动态渲染
 interface CategoryPageProps {
   params: Promise<{
     slug: string
   }>
+}
+
+// 标题经根布局模板拼为「分类名 - 站点名」；分类无独立描述字段，缺省时
+// 交给搜索引擎按页面内容摘要，避免与站点描述完全重复
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const [{ data: category }, settings] = await Promise.all([
+    getCategoryBySlug(slug),
+    getCachedDisplaySettings(),
+  ])
+  if (!category) return {}
+
+  return {
+    title: category.name,
+    description: settings?.siteDescription
+      ? `${category.name} - ${settings.siteDescription}`
+      : undefined,
+    // title/description 未声明，由 Next 从页面级元数据回填；分享图等字段由 helper 带齐
+    openGraph: buildShareOpenGraph(settings, `/category/${slug}`),
+    alternates: { canonical: `/category/${slug}` },
+  }
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {

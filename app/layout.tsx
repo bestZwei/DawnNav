@@ -13,6 +13,8 @@ import { getAdminSession } from "@/lib/api-auth"
 import { AdminAuthProvider } from "@/components/auth/admin-auth-provider"
 // 请求级缓存版解析：metadata/body/子布局/页面重复取用同一份工作区与展示设置
 import { getCachedCurrentWorkspace, getCachedDisplaySettings } from "@/lib/workspace-render"
+import { getRequestBaseUrl } from "@/lib/site-url"
+import { buildShareOpenGraph, resolveShareImage } from "@/lib/share-metadata"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +22,27 @@ export async function generateMetadata(): Promise<Metadata> {
   // 展示配置按当前请求的工作区覆盖（域名绑定 → 默认工作区）
   const settings = await getCachedDisplaySettings()
   const t = await getTranslations("metadata")
+  const siteName = settings?.siteName || "DawnNav"
+  const description = settings?.siteDescription || t("descriptionFallback")
+  // 分享图过滤规则见 share-metadata 模块（data URL 不可作 og:image）
+  const shareImage = resolveShareImage(settings?.siteLogo)
 
   return {
-    title: settings?.siteName || "DawnNav",
-    description: settings?.siteDescription || t("descriptionFallback"),
+    // metadataBase 让页面级 canonical / OG 相对地址可解析为绝对地址（按请求 Host 推导）
+    metadataBase: new URL(await getRequestBaseUrl()),
+    title: {
+      default: siteName,
+      template: `%s - ${siteName}`,
+    },
+    description,
+    // og:title/og:description 不在此写死站点级值：页面未声明 openGraph 时会整段
+    // 继承这里的解析结果，会把 /about、/category 的分享卡片退化成站点名。
+    // 缺省时社交平台自动回退 <title> 与 meta description，两者已是页面级
+    openGraph: buildShareOpenGraph(settings),
+    twitter: {
+      card: "summary",
+      ...(shareImage ? { images: [{ url: shareImage }] } : {}),
+    },
     icons: {
       icon: settings?.favicon || "/favicon.ico",
       apple: settings?.favicon || "/apple-touch-icon.png",
