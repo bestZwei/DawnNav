@@ -138,20 +138,21 @@ export function SiteDetailDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         {/* 宽版布局：左右分栏，移动端单列堆叠 */}
-        <DialogContent className="max-w-[min(96vw,1100px)] w-full gap-0 overflow-hidden p-0 sm:rounded-xl">
+        <DialogContent className="max-w-[min(96vw,1100px)] w-full gap-0 overflow-hidden rounded-xl p-0">
           <DialogTitle className="sr-only">{site.name}</DialogTitle>
 
           {/* 加载骨架屏 */}
           {loading && (
             <div className="flex min-h-0 min-w-0 max-h-[88vh] flex-col overflow-hidden">
-              {/* 头部骨架 */}
-              <div className="flex shrink-0 items-center gap-3.5 border-b border-border/60 p-5">
+              {/* 头部骨架（与详情主体的响应式头部对齐） */}
+              <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3.5 gap-y-2 border-b border-border/60 p-4 sm:items-center sm:p-5">
                 <Skeleton className="h-12 w-12 shrink-0 rounded-lg" />
-                <div className="flex-1 space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Skeleton className="h-5 w-1/3" />
                   <Skeleton className="h-3.5 w-1/2" />
                 </div>
-                <Skeleton className="h-9 w-24 shrink-0 rounded-md" />
+                <Skeleton className="col-span-full h-3 w-full sm:hidden" />
+                <Skeleton className="hidden h-9 w-24 shrink-0 rounded-md sm:block" />
               </div>
               {/* 截图区骨架 */}
               <div className="shrink-0 space-y-3 border-b border-border/60 bg-muted/10 px-5 py-4 sm:px-6">
@@ -187,11 +188,12 @@ export function SiteDetailDialog({
           {/* 详情主体：宽版上下分栏（顶部头部 / 截图区 / Markdown 阅读区） */}
           {detail && !loading && (
             <div className="flex min-h-0 min-w-0 max-h-[88vh] flex-col overflow-hidden">
-              {/* 顶部头部栏：图标 + 信息 + 右上角访问按钮 */}
-              <div className="grid min-w-0 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-3.5 border-b border-border/60 p-5">
+              {/* 顶部头部栏：移动端纵向堆叠（图标+标题 / 描述整宽 / 访问按钮末行），
+                  桌面端保持三列一行（图标 | 信息 | 右上角访问按钮） */}
+              <div className="grid min-w-0 shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3.5 gap-y-2 border-b border-border/60 p-4 sm:items-center sm:gap-y-0 sm:p-5">
                 <div
                   className={cn(
-                    "flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40",
+                    "col-start-1 row-start-1 flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40 sm:row-span-2 sm:self-center",
                     isCompact
                       ? "h-10 w-10 rounded-md p-1"
                       : "h-12 w-12 rounded-lg p-1.5",
@@ -211,8 +213,9 @@ export function SiteDetailDialog({
                     <Globe className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
+                {/* 标题 + URL：独占一行，右侧 pr 给悬浮关闭按钮留位 */}
+                <div className="col-start-2 row-start-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 pr-7 sm:pr-0">
                     <h2 className="text-lg font-semibold tracking-tight text-foreground">
                       {detail.name}
                     </h2>
@@ -231,17 +234,19 @@ export function SiteDetailDialog({
                   >
                     {detail.url}
                   </p>
-                  {detail.description && (
-                    <p className="mt-1.5 whitespace-pre-line break-words text-xs leading-relaxed text-muted-foreground">
-                      {detail.description}
-                    </p>
-                  )}
                 </div>
-                {/* 右上角「访问网站」按钮：放在关闭按钮左侧 */}
+                {/* 描述：移动端整宽一行，桌面归入中列标题下方 */}
+                {detail.description && (
+                  <p className="col-span-full row-start-2 whitespace-pre-line break-words text-xs leading-relaxed text-muted-foreground sm:col-span-1 sm:col-start-2 sm:row-start-2 sm:mt-1.5">
+                    {detail.description}
+                  </p>
+                )}
+                {/* 「访问网站」按钮：桌面端右上角（关闭按钮左侧）；
+                    移动端不放头部，收进底部操作栏（见下方） */}
                 {/* 注：详情弹窗不提供编辑入口——卡片悬停已有可用的编辑铅笔
                     （打开完整 SiteFormDialog），且本弹窗拿到的 site 字段
                     不足以回填编辑表单 */}
-                <div className="shrink-0 pr-7 flex items-center gap-2">
+                <div className="hidden sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:flex sm:items-center sm:justify-center sm:pr-7">
                   <Button onClick={handleVisit} size="sm">
                     <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
                     {t("visit")}
@@ -251,7 +256,7 @@ export function SiteDetailDialog({
 
               {/* 截图区：单行横向滚动，张数再多也不撑高、不挤压下方 Markdown 阅读区 */}
               {screenshots.length > 0 && (
-                <div className="shrink-0 border-b border-border/60 bg-muted/10 px-5 py-4 sm:px-6">
+                <div className="shrink-0 border-b border-border/60 bg-muted/10 px-4 py-4 sm:px-6">
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("screenshots")}{" "}
                     <span className="font-normal opacity-60">
@@ -280,7 +285,7 @@ export function SiteDetailDialog({
               )}
 
               {/* Markdown 阅读区：占满剩余高度，垂直滚动 */}
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-5 py-6 sm:px-8">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-8 sm:py-6">
                 {hasContent ? (
                   <MarkdownContent content={detail.detailContent!} />
                 ) : (
@@ -288,6 +293,14 @@ export function SiteDetailDialog({
                     {t("emptyHint")}
                   </p>
                 )}
+              </div>
+
+              {/* 移动端底部操作栏：主访问按钮整宽常驻，滚动时始终可见、拇指易达 */}
+              <div className="shrink-0 border-t border-border/60 bg-background/95 px-3 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+                <Button onClick={handleVisit} className="w-full">
+                  <ExternalLink className="mr-1.5 h-4 w-4" />
+                  {t("visit")}
+                </Button>
               </div>
             </div>
           )}
