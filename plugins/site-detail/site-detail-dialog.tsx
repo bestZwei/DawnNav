@@ -182,8 +182,11 @@ export function SiteDetailDialog({
         open={open}
         onOpenChange={(next) => (next ? onOpenChange(true) : requestDialogClose())}
       >
-        {/* 宽版布局：左右分栏，移动端单列堆叠 */}
-        <DialogContent className="max-w-[min(96vw,1100px)] w-full gap-0 overflow-hidden rounded-xl p-0">
+        {/* 宽版布局：左右分栏，移动端单列堆叠。
+            「逐渐显示」：打开动画比通用弹窗更慢更柔（500ms、92% 起步缩放），
+            仅作用于打开态（tailwind-merge 覆盖基类的 duration-300/zoom-in-95），
+            关闭仍走基类 300ms 不拖沓；内部区块再错峰渐现（见下方各 section） */}
+        <DialogContent className="max-w-[min(96vw,1100px)] w-full gap-0 overflow-hidden rounded-xl p-0 data-[state=open]:duration-500 data-[state=open]:zoom-in-[0.92]">
           <DialogTitle className="sr-only">{site.name}</DialogTitle>
 
           {/* 加载骨架屏 */}
@@ -231,12 +234,13 @@ export function SiteDetailDialog({
           )}
 
           {/* 详情主体：宽版上下分栏（顶部头部 / 截图区 / Markdown 阅读区）。
-              内容到达时淡入，替代骨架屏的瞬间硬切 */}
+              内容到达后各区块错峰渐现（头部 0ms → 截图 70ms → 阅读 140ms），
+              配合弹窗本体 500ms 入场形成「逐渐显示」的层次感 */}
           {detail && !loading && (
-            <div className="flex min-h-0 min-w-0 max-h-[88vh] animate-in flex-col overflow-hidden fade-in-0 duration-300 ease-out">
+            <div className="flex min-h-0 min-w-0 max-h-[88vh] flex-col overflow-hidden">
               {/* 顶部头部栏：移动端纵向堆叠（图标+标题 / 描述整宽 / 访问按钮末行），
                   桌面端保持三列一行（图标 | 信息 | 右上角访问按钮） */}
-              <div className="grid min-w-0 shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3.5 gap-y-2 border-b border-border/60 p-4 sm:items-center sm:gap-y-0 sm:p-5">
+              <div className="grid min-w-0 shrink-0 animate-fade-in-up grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3.5 gap-y-2 border-b border-border/60 p-4 sm:items-center sm:gap-y-0 sm:p-5">
                 <div
                   className={cn(
                     "col-start-1 row-start-1 flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40 sm:row-span-2 sm:self-center",
@@ -307,7 +311,7 @@ export function SiteDetailDialog({
 
               {/* 截图区：单行横向滚动，张数再多也不撑高、不挤压下方 Markdown 阅读区 */}
               {screenshots.length > 0 && (
-                <div className="shrink-0 border-b border-border/60 bg-muted/10 px-4 py-4 sm:px-6">
+                <div className="shrink-0 animate-fade-in-up border-b border-border/60 bg-muted/10 px-4 py-4 [animation-delay:70ms] sm:px-6">
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("screenshots")}{" "}
                     <span className="font-normal opacity-60">
@@ -336,7 +340,7 @@ export function SiteDetailDialog({
               )}
 
               {/* Markdown 阅读区：占满剩余高度，垂直滚动 */}
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-8 sm:py-6">
+              <div className="min-h-0 min-w-0 flex-1 animate-fade-in-up overflow-y-auto px-4 py-4 [animation-delay:140ms] sm:px-8 sm:py-6">
                 {hasContent ? (
                   <MarkdownContent content={detail.detailContent!} />
                 ) : (
@@ -347,7 +351,7 @@ export function SiteDetailDialog({
               </div>
 
               {/* 移动端底部操作栏：主访问按钮整宽常驻，滚动时始终可见、拇指易达 */}
-              <div className="shrink-0 border-t border-border/60 bg-background/95 px-3 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+              <div className="shrink-0 animate-fade-in-up border-t border-border/60 bg-background/95 px-3 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[max(0.75rem,env(safe-area-inset-bottom))] [animation-delay:140ms] sm:hidden">
                 <Button onClick={handleVisit} className="w-full">
                   <ExternalLink className="mr-1.5 h-4 w-4" />
                   {t("visit")}
