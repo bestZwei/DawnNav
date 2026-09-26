@@ -66,6 +66,12 @@ function OverviewSiteIcon({
     setLoadState(iconSrc ? "loading" : "error")
   }, [iconSrc])
 
+  // 缓存图可能在 onLoad 监听建立前已完成加载，按 complete/naturalWidth 同步，
+  // 避免图标停在透明态而占位字母又不显示（error 态才显示字母）
+  const syncLoadedImage = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) setLoadState("loaded")
+  }
+
   return (
     <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-[3px]">
       {src && loadState !== "error" && (
@@ -75,6 +81,7 @@ function OverviewSiteIcon({
           width={16}
           height={16}
           sizes="16px"
+          ref={syncLoadedImage}
           referrerPolicy="no-referrer"
           loading="lazy"
           unoptimized

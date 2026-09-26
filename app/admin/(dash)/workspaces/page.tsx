@@ -314,12 +314,12 @@ export default function AdminWorkspacesPage() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : workspaces.length === 0 ? (
-            <div className="flex h-40 flex-col items-center justify-center rounded-xl border border-dashed text-center">
+            <div className="flex h-40 flex-col items-center justify-center rounded-xl border border-dashed text-center animate-fade-in">
               <p className="text-sm font-semibold">{t("emptyTitle")}</p>
               <p className="mt-1 text-xs text-muted-foreground">{t("emptyDesc")}</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in">
               {workspaces.map(ws => (
                 <div key={ws.id} className="rounded-xl border p-4">
                   <div className="flex flex-wrap items-center gap-3">

@@ -143,6 +143,25 @@ export default function AdminCategoriesPage() {
     }
   }
 
+  // 翻页的刷新路径：silent 保持旧表格可见（不闪 spinner），仅以半透明提示更新中。
+  // loadCategories 内部已吞掉所有异常，await 结束即请求落定（含 clamp 重试）。
+  // 计数法清态：与 sites 页同理，防止被代际守卫丢弃的旧请求提前熄灭提示
+  const [refreshing, setRefreshing] = useState(false)
+  const refreshPendingRef = useRef(0)
+  const refreshPageSilently = async (newPage: number) => {
+    refreshPendingRef.current += 1
+    setRefreshing(true)
+    try {
+      await loadCategories(newPage, true)
+    } finally {
+      refreshPendingRef.current -= 1
+      if (refreshPendingRef.current <= 0) {
+        refreshPendingRef.current = 0
+        setRefreshing(false)
+      }
+    }
+  }
+
   // 持有最新的 loadCategories，挂载 effect 仅执行一次且不缺依赖
   const loadCategoriesRef = useRef(loadCategories)
   useEffect(() => {
@@ -262,11 +281,11 @@ export default function AdminCategoriesPage() {
     setDialogOpen(true)
   }
 
-  // 页面切换处理
+  // 页面切换处理：silent 刷新保持旧表格可见，仅半透明提示更新中
   const handlePageChange = (newPage: number) => {
-    if (loading) return
+    if (loading || refreshing) return
     if (newPage < 1 || (pagination && newPage > pagination.totalPages)) return
-    loadCategories(newPage)
+    refreshPageSilently(newPage)
   }
 
   // 打开删除确认对话框
@@ -364,7 +383,12 @@ export default function AdminCategoriesPage() {
               </EmptyContent>
             </Empty>
           ) : (
-            <div ref={dragTableRef} className="overflow-hidden rounded-lg border">
+            <div
+              ref={dragTableRef}
+              className={`overflow-hidden rounded-lg border transition-opacity duration-200 ${
+                refreshing ? "pointer-events-none opacity-60" : ""
+              }`}
+            >
               <Table>
                 <TableHeader>
                   <TableRow>

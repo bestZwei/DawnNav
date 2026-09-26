@@ -60,6 +60,12 @@ export function Header({
   const [logo, setLogo] = useState<string | null>(siteLogo)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  // logo 由 fetchPublicSettings 异步到达后挂载，完成前保持透明、onLoad 后淡入，
+  // 避免 logo 在首屏视觉焦点上瞬间蹦出；complete 同步兜底缓存图场景
+  const [logoLoaded, setLogoLoaded] = useState(false)
+  const syncLogoLoaded = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) setLogoLoaded(true)
+  }
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const { isOverview } = useCardDensity()
   const t = useTranslations("header")
@@ -68,6 +74,10 @@ export function Header({
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    setLogoLoaded(false)
+  }, [logo])
 
   useEffect(() => {
     let cancelled = false
@@ -292,9 +302,13 @@ export function Header({
                   alt="Logo"
                   width={24}
                   height={24}
-                  className="h-6 w-6 object-contain"
+                  ref={syncLogoLoaded}
+                  className={`h-6 w-6 object-contain transition-opacity duration-300 ${
+                    logoLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                   referrerPolicy="no-referrer"
                   priority
+                  onLoad={() => setLogoLoaded(true)}
                 />
               )}
               <span className="font-bold text-xl">{siteName}</span>

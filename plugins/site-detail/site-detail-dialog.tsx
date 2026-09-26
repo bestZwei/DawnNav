@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Globe,
   ImageOff,
+  Loader2,
   RefreshCw,
   X,
   ZoomIn,
@@ -59,6 +60,21 @@ interface SiteDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// 详情数据会话级缓存（stale-while-revalidate）：重复打开同一站点时立即展示
+// 上次内容、后台静默刷新，避免每次都闪一遍「骨架屏→内容」的硬切。上限 50 条，
+// 超出后按写入先后淘汰最早的（Map 保持插入序，取第一个键即最早写入）。
+// 数据变化由后台刷新兜底：管理员改完详情内容，重新打开会先见旧数据、刷新完成后更新。
+const DETAIL_CACHE_LIMIT = 50;
+const detailCache = new Map<string, SiteDetailData>();
+
+function cacheDetail(siteId: string, data: SiteDetailData) {
+  if (!detailCache.has(siteId) && detailCache.size >= DETAIL_CACHE_LIMIT) {
+    const oldest = detailCache.keys().next().value;
+    if (oldest !== undefined) detailCache.delete(oldest);
+  }
+  detailCache.set(siteId, data);
+}
+
 // 站点详情弹窗：宽版左右分栏布局（截图 / Markdown 内容）
 // "访问网站"按钮置于头部右上角，点击计入 Visit 统计
 export function SiteDetailDialog({
@@ -76,17 +92,21 @@ export function SiteDetailDialog({
   const { density } = useCardDensity();
 
   const loadDetail = useCallback(async () => {
-    setLoading(true);
+    // 命中缓存时不进骨架屏（stale-while-revalidate）：旧数据已在展示，仅静默刷新
+    const hasCache = detailCache.has(site.id);
+    setLoading(!hasCache);
     setLoadError(false);
     try {
       const res = await fetch(`/api/sites/${site.id}/detail`, {
         headers: { Accept: "application/json" },
       });
       if (!res.ok) throw new Error("Failed to load site detail");
-      const data = await res.json();
+      const data = (await res.json()) as SiteDetailData;
+      cacheDetail(site.id, data);
       setDetail(data);
     } catch {
-      setLoadError(true);
+      // 已有缓存数据在展示时保持现状（静默失败），仅无缓存可显示才进入错误态
+      if (!detailCache.has(site.id)) setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -94,11 +114,15 @@ export function SiteDetailDialog({
 
   useEffect(() => {
     if (open) {
-      setDetail(null);
+      // 命中缓存立即展示旧数据再刷新；未命中清空走骨架屏流程
+      setDetail(detailCache.get(site.id) ?? null);
       setLightboxShot(null);
+      // 预热 Markdown 懒加载 chunk（与下方 dynamic() 同一模块，webpack 去重共享），
+      // 首次打开时阅读区不再出现「空白等待→内容突现」
+      import("@/components/markdown-content");
       loadDetail();
     }
-  }, [open, loadDetail]);
+  }, [open, loadDetail, site.id]);
 
   const handleVisit = () => {
     if (navigator.sendBeacon) {
@@ -130,6 +154,13 @@ export function SiteDetailDialog({
     iconSrc,
     iconFallbackSrc,
   );
+  // 图标淡入：加载完成前保持透明（onLoad 后过渡显现），避免弹窗打开后图标瞬间蹦出
+  const [iconLoaded, setIconLoaded] = useState(false);
+  // 缓存图可能在 onLoad 监听建立前已完成加载，按 complete/naturalWidth 同步兜底
+  const syncIconLoaded = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) setIconLoaded(true);
+  };
+  useEffect(() => setIconLoaded(false), [iconResolvedSrc]);
 
   const screenshots = detail?.screenshots ?? [];
   const hasContent = Boolean(detail?.detailContent?.trim());
@@ -190,7 +221,7 @@ export function SiteDetailDialog({
 
           {/* 加载失败 */}
           {loadError && !loading && (
-            <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 p-6">
+            <div className="flex min-h-[240px] animate-in flex-col items-center justify-center gap-3 p-6 fade-in-0 duration-300 ease-out">
               <p className="text-sm text-muted-foreground">{t("loadError")}</p>
               <Button variant="outline" size="sm" onClick={loadDetail}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
@@ -199,9 +230,10 @@ export function SiteDetailDialog({
             </div>
           )}
 
-          {/* 详情主体：宽版上下分栏（顶部头部 / 截图区 / Markdown 阅读区） */}
+          {/* 详情主体：宽版上下分栏（顶部头部 / 截图区 / Markdown 阅读区）。
+              内容到达时淡入，替代骨架屏的瞬间硬切 */}
           {detail && !loading && (
-            <div className="flex min-h-0 min-w-0 max-h-[88vh] flex-col overflow-hidden">
+            <div className="flex min-h-0 min-w-0 max-h-[88vh] animate-in flex-col overflow-hidden fade-in-0 duration-300 ease-out">
               {/* 顶部头部栏：移动端纵向堆叠（图标+标题 / 描述整宽 / 访问按钮末行），
                   桌面端保持三列一行（图标 | 信息 | 右上角访问按钮） */}
               <div className="grid min-w-0 shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3.5 gap-y-2 border-b border-border/60 p-4 sm:items-center sm:gap-y-0 sm:p-5">
@@ -215,13 +247,18 @@ export function SiteDetailDialog({
                 >
                   {iconResolvedSrc ? (
                     <Image
+                      ref={syncIconLoaded}
                       src={iconResolvedSrc}
                       alt={site.name}
                       width={36}
                       height={36}
                       unoptimized
+                      onLoad={() => setIconLoaded(true)}
                       onError={handleIconError}
-                      className="h-full w-full object-contain"
+                      className={cn(
+                        "h-full w-full object-contain transition-opacity duration-300",
+                        iconLoaded ? "opacity-100" : "opacity-0",
+                      )}
                     />
                   ) : (
                     <Globe className="h-5 w-5 text-muted-foreground" />
@@ -283,7 +320,7 @@ export function SiteDetailDialog({
                         key={shot.id}
                         type="button"
                         onClick={() => setLightboxShot(shot)}
-                        className="group relative aspect-video w-56 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-all duration-250 ease-spring hover:scale-[1.03] hover:border-primary/60 hover:shadow-md active:scale-[0.98] sm:w-64"
+                        className="group relative aspect-video w-56 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-all duration-[250ms] ease-spring hover:scale-[1.03] hover:border-primary/60 hover:shadow-md active:scale-[0.98] sm:w-64"
                       >
                         <ScreenshotImage
                           displayUrl={shot.displayUrl}
@@ -333,16 +370,7 @@ export function SiteDetailDialog({
               <X className="h-5 w-5" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
-            {lightboxShot && (
-              <Image
-                src={lightboxShot.displayUrl}
-                alt={site.name}
-                width={1600}
-                height={900}
-                unoptimized
-                className="max-h-[85vh] w-auto max-w-full rounded-lg object-contain"
-              />
-            )}
+            {lightboxShot && <LightboxImage src={lightboxShot.displayUrl} alt={site.name} />}
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
@@ -350,7 +378,37 @@ export function SiteDetailDialog({
   );
 }
 
-// 单张截图：加载失败时展示占位样式
+// Lightbox 全屏大图：深色遮罩上大图瞬现对比强烈，加载完成前显示居中 spinner、
+// onLoad 后淡入；缓存图可能在 onLoad 监听建立前已加载完成（complete 同步兜底）
+function LightboxImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const syncLoadedImage = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) setLoaded(true);
+  };
+
+  return (
+    <>
+      {!loaded && (
+        <Loader2 className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 animate-spin text-white/70" />
+      )}
+      <Image
+        ref={syncLoadedImage}
+        src={src}
+        alt={alt}
+        width={1600}
+        height={900}
+        unoptimized
+        onLoad={() => setLoaded(true)}
+        className={cn(
+          "max-h-[85vh] w-auto max-w-full rounded-lg object-contain transition-opacity duration-300",
+          loaded ? "opacity-100" : "opacity-0",
+        )}
+      />
+    </>
+  );
+}
+
+// 单张截图：加载完成前透明淡入（避免图片加载后瞬间蹦出），失败时展示占位样式
 function ScreenshotImage({
   displayUrl,
   name,
@@ -359,6 +417,11 @@ function ScreenshotImage({
   name: string;
 }) {
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  // 缓存图可能在 onLoad 监听建立前已完成加载，按 complete/naturalWidth 同步兜底
+  const syncLoadedImage = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) setLoaded(true);
+  };
 
   if (failed) {
     return (
@@ -371,13 +434,18 @@ function ScreenshotImage({
 
   return (
     <Image
+      ref={syncLoadedImage}
       src={displayUrl}
       alt={name}
       fill
       unoptimized
       loading="lazy"
+      onLoad={() => setLoaded(true)}
       onError={() => setFailed(true)}
-      className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+      className={cn(
+        "object-cover transition-[opacity,transform] duration-300 ease-out group-hover:scale-[1.02]",
+        loaded ? "opacity-100" : "opacity-0",
+      )}
     />
   );
 }

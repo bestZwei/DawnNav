@@ -356,7 +356,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
       aria-label={t("visit", { name: site.name })}
       className="block h-full"
     >
-      <div className={`relative flex h-full items-start gap-3.5 overflow-hidden rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-250 ease-spring hover:-translate-y-1 hover:shadow-card-hover active:scale-[0.98] active:translate-y-0 ${
+      <div className={`relative flex h-full items-start gap-3.5 overflow-hidden rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-[250ms] ease-spring hover:-translate-y-1 hover:shadow-card-hover active:scale-[0.98] active:translate-y-0 ${
         site.isPinned
           ? "border-amber-500/30 bg-card hover:border-amber-500/60 ring-1 ring-amber-500/10"
           : "border-border/80 bg-card hover:border-primary/40 hover:bg-card"

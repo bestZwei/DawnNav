@@ -230,7 +230,7 @@ export default function AnnouncementsPage() {
               {tc("loading")}
             </div>
           ) : items.length === 0 ? (
-            <Empty className="py-10">
+            <Empty className="animate-fade-in py-10">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <Megaphone className="size-5" />
@@ -243,7 +243,7 @@ export default function AnnouncementsPage() {
             items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-start justify-between gap-4 rounded-lg border p-4"
+                className="flex animate-fade-in items-start justify-between gap-4 rounded-lg border p-4"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">

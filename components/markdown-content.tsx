@@ -7,6 +7,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState, type ReactNode } from "react"
 import { ImageOff } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // 安全的 Markdown 渲染组件：
 // - 不启用 rehype-raw，原始 HTML 按纯文本处理，天然防 XSS
@@ -15,8 +16,6 @@ import { ImageOff } from "lucide-react"
 // - 长 URL / 长单词 / 宽表格不会撑爆容器（anywhere 参与 min-content 计算，
 //   即使父级是 grid/flex 布局也能正确收缩；宽表格/代码块走横向滚动）
 export function MarkdownContent({ content }: { content: string }) {
-  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({})
-
   return (
     <div className="markdown-content min-w-0 max-w-full text-sm leading-relaxed text-foreground/90 break-words [overflow-wrap:anywhere]">
       <ReactMarkdown
@@ -76,33 +75,64 @@ export function MarkdownContent({ content }: { content: string }) {
           em: ({ children }) => <em className="italic">{children}</em>,
           img: ({ src, alt }) => {
             const srcStr = typeof src === "string" ? src : ""
-            const key = srcStr
             // 空地址（如 Markdown 的 ![]()）直接按失败占位渲染，避免 next/image 抛错
-            if (!srcStr || failedImages[key]) {
-              return (
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/80 bg-muted/20 px-2.5 py-1.5 text-xs text-muted-foreground">
-                  <ImageOff className="h-3.5 w-3.5" />
-                  {alt || "image"}
-                </span>
-              )
+            if (!srcStr) {
+              return <MarkdownImagePlaceholder alt={alt} />
             }
-            return (
-              <Image
-                src={srcStr}
-                alt={alt || ""}
-                width={800}
-                height={450}
-                unoptimized
-                loading="lazy"
-                className="my-2 h-auto max-w-full rounded-lg border border-border/60"
-                onError={() => setFailedImages(prev => ({ ...prev, [key]: true }))}
-              />
-            )
+            return <MarkdownImage srcStr={srcStr} alt={alt} />
           },
         }}
       >
         {content}
       </ReactMarkdown>
     </div>
+  )
+}
+
+// 加载失败/空地址占位
+function MarkdownImagePlaceholder({ alt }: { alt?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/80 bg-muted/20 px-2.5 py-1.5 text-xs text-muted-foreground">
+      <ImageOff className="h-3.5 w-3.5" />
+      {alt || "image"}
+    </span>
+  )
+}
+
+// Markdown 内嵌图片：加载完成前透明、onLoad 后淡入（避免图片加载后瞬间蹦出），
+// 失败回落占位样式。状态收敛到单图组件内，取代原先挂在外层的 failedImages 映射
+function MarkdownImage({ srcStr, alt }: { srcStr: string; alt?: string }) {
+  const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  // 缓存图可能在 React 水合/节点重建之前就完成了加载，onLoad 不会再触发；
+  // 挂载时直接按 complete/naturalWidth 同步状态，避免图片永久停在透明态
+  // （与 site-card SiteIcon 的 syncLoadedImage 同款兜底）
+  const syncLoadedImage = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) {
+      setLoaded(true)
+    }
+  }
+
+  if (failed) {
+    return <MarkdownImagePlaceholder alt={alt} />
+  }
+
+  return (
+    <Image
+      ref={syncLoadedImage}
+      src={srcStr}
+      alt={alt || ""}
+      width={800}
+      height={450}
+      unoptimized
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+      onError={() => setFailed(true)}
+      className={cn(
+        "my-2 h-auto max-w-full rounded-lg border border-border/60 transition-opacity duration-300",
+        loaded ? "opacity-100" : "opacity-0",
+      )}
+    />
   )
 }

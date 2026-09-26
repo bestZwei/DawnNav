@@ -255,7 +255,7 @@ export function AdminUsersManager() {
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user.id}>
+                <TableRow key={user.id} className="animate-fade-in">
                   <TableCell className="font-medium">{user.email}</TableCell>
                   <TableCell>{user.name || "-"}</TableCell>
                   <TableCell>{renderRoleBadge(user.role)}</TableCell>

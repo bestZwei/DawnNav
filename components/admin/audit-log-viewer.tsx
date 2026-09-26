@@ -199,7 +199,7 @@ export function AuditLogViewer() {
               </TableRow>
             ) : (
               logs.map((log) => (
-                <TableRow key={log.id}>
+                <TableRow key={log.id} className="animate-fade-in">
                   <TableCell className="whitespace-nowrap text-muted-foreground">
                     {new Date(log.createdAt).toLocaleString()}
                   </TableCell>

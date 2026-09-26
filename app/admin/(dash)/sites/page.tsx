@@ -158,6 +158,9 @@ export default function AdminSitesPage() {
   const [pageSize, setPageSize] = useState(10)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+  // 翻页/筛选/搜索触发的静默刷新进行中：旧表格保持可见，仅整体半透明提示更新中
+  // （避免整表塌缩成 spinner 再弹回；拖拽排序等其他 silent 调用不置此态，避免干扰拖拽）
+  const [refreshing, setRefreshing] = useState(false)
 
   // 加载网站列表
   // 请求代际守卫：快速连点页码/筛选与搜索并发时，慢的旧响应不得覆盖新状态
@@ -217,6 +220,25 @@ export default function AdminSitesPage() {
     }
   }
 
+  // 翻页/筛选/搜索的刷新路径：silent 保持旧表格可见（不闪 spinner），仅以半透明
+  // 提示更新中。loadSites 内部已吞掉所有异常，await 结束即请求落定（含 clamp 重试）。
+  // 用计数而非直接置位清位：筛选/搜索/每页条数三个入口可并发触发多个静默刷新，
+  // 被代际守卫丢弃的旧请求会先落定，若它无条件清态会把还在途的新请求的提示关掉
+  const refreshPendingRef = useRef(0)
+  const refreshPageSilently = async (newPage: number, newSize = pageSize) => {
+    refreshPendingRef.current += 1
+    setRefreshing(true)
+    try {
+      await loadSites(newPage, newSize, true)
+    } finally {
+      refreshPendingRef.current -= 1
+      if (refreshPendingRef.current <= 0) {
+        refreshPendingRef.current = 0
+        setRefreshing(false)
+      }
+    }
+  }
+
   // 加载分类列表
   const loadCategories = async () => {
     try {
@@ -233,9 +255,11 @@ export default function AdminSitesPage() {
   // 避免 exhaustive-deps 缺依赖告警，同时不引入额外重新请求
   const loadSitesRef = useRef(loadSites)
   const loadCategoriesRef = useRef(loadCategories)
+  const refreshPageSilentlyRef = useRef(refreshPageSilently)
   useEffect(() => {
     loadSitesRef.current = loadSites
     loadCategoriesRef.current = loadCategories
+    refreshPageSilentlyRef.current = refreshPageSilently
   })
 
   // 跨页拖拽：指针在视口上/下边缘感应区停留时自动翻页（静默加载不闪 spinner），
@@ -339,7 +363,7 @@ export default function AdminSitesPage() {
       isFirstFilterRun.current = false
       return
     }
-    loadSitesRef.current(1)
+    refreshPageSilentlyRef.current(1)
   }, [filterCategory, filterStatus, filterSubmitter, sortBy, sortDir])
 
   // 搜索防抖，300ms 后重新加载
@@ -348,7 +372,7 @@ export default function AdminSitesPage() {
       isFirstSearch.current = false
       return
     }
-    const timer = setTimeout(() => loadSitesRef.current(1), 300)
+    const timer = setTimeout(() => refreshPageSilentlyRef.current(1), 300)
     return () => clearTimeout(timer)
   }, [searchKeyword])
 
@@ -356,7 +380,7 @@ export default function AdminSitesPage() {
   const handlePageSizeChange = (value: string) => {
     const newSize = Number(value)
     setPageSize(newSize)
-    loadSites(1, newSize)
+    refreshPageSilently(1, newSize)
   }
 
   // 拖拽排序：启用或切换分类时拉取该分类完整顺序底册
@@ -588,11 +612,11 @@ export default function AdminSitesPage() {
     setDialogOpen(true)
   }
 
-  // 页面切换处理
+  // 页面切换处理：silent 刷新保持旧表格可见，仅半透明提示更新中
   const handlePageChange = (newPage: number) => {
-    if (loading) return
+    if (loading || refreshing) return
     if (newPage < 1 || (pagination && newPage > pagination.totalPages)) return
-    loadSites(newPage)
+    refreshPageSilently(newPage)
   }
 
   // 打开删除确认对话框
@@ -996,7 +1020,12 @@ export default function AdminSitesPage() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <div ref={dragTableRef} className="overflow-hidden rounded-lg border">
+            <div
+              ref={dragTableRef}
+              className={`overflow-hidden rounded-lg border transition-opacity duration-200 ${
+                refreshing ? "pointer-events-none opacity-60" : ""
+              }`}
+            >
               <Table>
                 <TableHeader>
                   <TableRow>

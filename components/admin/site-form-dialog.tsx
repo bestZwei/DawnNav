@@ -814,13 +814,7 @@ function DetailContentFields({
             {screenshots.map((shot, index) => (
               <div key={shot.key} className="group relative overflow-hidden rounded-lg border bg-muted/20 transition-all duration-200 hover:shadow-md hover:border-primary/40 hover:scale-[1.02]">
                 <div className="relative aspect-video">
-                  <Image
-                    src={shot.previewUrl}
-                    alt={`screenshot-${index}`}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
+                  <ScreenshotPreviewImage src={shot.previewUrl} alt={`screenshot-${index}`} />
                 </div>
                 <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 px-1.5 py-1 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1">
                   <div className="flex">
@@ -858,5 +852,27 @@ function DetailContentFields({
         )}
       </div>
     </div>
+  )
+}
+
+// 截图预览图：URL 来源的远程截图走网络加载，完成前保持透明、onLoad 后淡入，
+// 避免空框突现；缓存图可能在 onLoad 监听建立前已完成（complete 同步兜底）
+function ScreenshotPreviewImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const syncLoadedImage = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) setLoaded(true)
+  }
+  return (
+    <Image
+      ref={syncLoadedImage}
+      src={src}
+      alt={alt}
+      fill
+      unoptimized
+      onLoad={() => setLoaded(true)}
+      className={`object-cover transition-opacity duration-300 ${
+        loaded ? "opacity-100" : "opacity-0"
+      }`}
+    />
   )
 }
