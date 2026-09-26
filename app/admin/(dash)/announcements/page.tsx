@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { Megaphone, Pencil, Plus, Trash2, Loader2, CalendarClock, Link as LinkIcon } from "lucide-react"
+import { Megaphone, Pencil, Plus, Trash2, Loader2, CalendarClock, Link as LinkIcon, Pin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -47,6 +47,7 @@ interface AnnouncementItem {
   linkUrl: string | null
   linkText: string | null
   isPublished: boolean
+  isSticky: boolean
   startAt: string | null
   endAt: string | null
   createdAt: string
@@ -58,6 +59,7 @@ interface FormState {
   linkUrl: string
   linkText: string
   isPublished: boolean
+  isSticky: boolean
   startAt: string
   endAt: string
 }
@@ -68,6 +70,7 @@ const EMPTY_FORM: FormState = {
   linkUrl: "",
   linkText: "",
   isPublished: true,
+  isSticky: false,
   startAt: "",
   endAt: "",
 }
@@ -153,6 +156,7 @@ export default function AnnouncementsPage() {
       linkUrl: item.linkUrl || "",
       linkText: item.linkText || "",
       isPublished: item.isPublished,
+      isSticky: item.isSticky,
       startAt: toLocalInputValue(item.startAt),
       endAt: toLocalInputValue(item.endAt),
     })
@@ -167,6 +171,7 @@ export default function AnnouncementsPage() {
       linkUrl: form.linkUrl || null,
       linkText: form.linkText || null,
       isPublished: form.isPublished,
+      isSticky: form.isSticky,
       startAt: toDateOrNull(form.startAt),
       endAt: toDateOrNull(form.endAt),
     }
@@ -252,6 +257,12 @@ export default function AnnouncementsPage() {
                         {item.startAt ? new Date(item.startAt).toLocaleString() : t("noLimit")}
                         {" → "}
                         {item.endAt ? new Date(item.endAt).toLocaleString() : t("noLimit")}
+                      </span>
+                    )}
+                    {item.isSticky && (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Pin className="h-3.5 w-3.5" />
+                        {t("sticky")}
                       </span>
                     )}
                   </div>
@@ -368,6 +379,18 @@ export default function AnnouncementsPage() {
                 id="announcement-published"
                 checked={form.isPublished}
                 onCheckedChange={(checked) => setForm({ ...form, isPublished: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="announcement-sticky">{t("fieldSticky")}</Label>
+                <p className="text-xs text-muted-foreground">{t("stickyHint")}</p>
+              </div>
+              <Switch
+                id="announcement-sticky"
+                checked={form.isSticky}
+                onCheckedChange={(checked) => setForm({ ...form, isSticky: checked })}
               />
             </div>
           </div>

@@ -128,7 +128,7 @@
     },
     "announcements": {
       "title": "Announcements",
-      "desc": "Post maintenance notices and event news for the current workspace; visitors see them as frontend popups one after another, newest first (each announcement is shown once per visitor)",
+      "desc": "Post maintenance notices and event news for the current workspace; visitors see them as frontend popups one after another, newest first (each announcement is shown once per visitor; sticky ones pop up on every visit)",
       "create": "New announcement",
       "createTitle": "New announcement",
       "editTitle": "Edit announcement",
@@ -145,6 +145,9 @@
       "fieldEndAt": "End time (optional)",
       "fieldPublished": "Publish now",
       "publishedHint": "When off, the announcement is not shown on the public site but is kept",
+      "fieldSticky": "Show persistently",
+      "stickyHint": "When on, this announcement pops up on every visit, bypassing the once-per-visitor limit (best for long-running maintenance notices)",
+      "sticky": "Sticky",
       "published": "Published",
       "draft": "Draft",
       "noLimit": "No limit",

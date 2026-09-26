@@ -239,6 +239,7 @@ model Visit {
 // 按工作区隔离——每个工作区维护各自的公告，前台只展示当前访问工作区的公告。
 // 「只显示一次」由前端实现——关闭后把公告 id 写入 localStorage，
 // 同一条不再弹出；下次发布新公告（id 变化）会再弹一次。
+// isSticky 为「常驻」公告：前端跳过已读记录，每次访问都重新弹出（如长期维护通知）。
 model Announcement {
   id          String    @id @default(cuid())
   title       String
@@ -247,6 +248,8 @@ model Announcement {
   linkUrl     String?   @map("link_url")
   linkText    String?   @map("link_text")
   isPublished Boolean   @default(false) @map("is_published")
+  // 常驻公告：每次访问都重新弹出（前端跳过 localStorage 已读记录）
+  isSticky    Boolean   @default(false) @map("is_sticky")
   // 生效时间窗：两端都可为空（空表示不限制）
   startAt     DateTime? @map("start_at")
   endAt       DateTime? @map("end_at")

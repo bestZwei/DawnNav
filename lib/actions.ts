@@ -3632,6 +3632,8 @@ export interface AnnouncementInput {
   linkUrl?: string | null
   linkText?: string | null
   isPublished?: boolean
+  // 常驻公告：每次访问都重新弹出（前端跳过 localStorage 已读记录）
+  isSticky?: boolean
   startAt?: Date | null
   endAt?: Date | null
 }
@@ -3665,6 +3667,7 @@ function normalizeAnnouncementInput(data: AnnouncementInput) {
     linkUrl: data.linkUrl?.trim() || null,
     linkText: data.linkText?.trim() || null,
     isPublished: data.isPublished !== undefined ? Boolean(data.isPublished) : false,
+    isSticky: data.isSticky !== undefined ? Boolean(data.isSticky) : false,
     startAt: data.startAt ?? null,
     endAt: data.endAt ?? null,
   }
@@ -3781,6 +3784,7 @@ export async function getActiveAnnouncements() {
         content: true,
         linkUrl: true,
         linkText: true,
+        isSticky: true,
       },
     })
     return announcements
