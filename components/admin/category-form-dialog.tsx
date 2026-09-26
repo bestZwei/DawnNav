@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CategoryIconPicker } from "@/components/admin/category-icon-picker"
 import { createCategory, updateCategory, getCategoryById } from "@/lib/actions"
+import { invalidateAdminCategoriesCache } from "@/lib/admin-categories"
 import { useTranslations } from "next-intl"
 import { resolveActionError } from "@/lib/action-error"
 import { toast } from "sonner"
@@ -102,6 +103,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
         : await updateCategory(categoryId!, formData)
 
       if (result.success) {
+        // 分类缓存失效：前台编辑弹窗的分类下拉共享 30 秒缓存
+        invalidateAdminCategoriesCache()
         toast.success(mode === "create" ? t("createSuccess") : t("updateSuccess"), {
           description: mode === "create"
             ? t("createSuccessDesc", { name: formData.name })

@@ -52,6 +52,7 @@ import {
 import { CategoryFormDialog } from "@/components/admin/category-form-dialog"
 import { CategoryIconBadge } from "@/components/category-icon"
 import { getCategoriesWithPagination, deleteCategory, updateCategoriesOrder } from "@/lib/actions"
+import { invalidateAdminCategoriesCache } from "@/lib/admin-categories"
 import { toast } from "sonner"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useTranslations } from "next-intl"
@@ -170,6 +171,8 @@ export default function AdminCategoriesPage() {
       }))
       const result = await updateCategoriesOrder(orderPayload)
       if (result.success) {
+        // 顺序决定前台弹窗的默认选中项（list[0]），同样要失效分类缓存
+        invalidateAdminCategoriesCache()
         toast.success(t("orderSaved"), {
           description: t("orderSavedDesc"),
         })
@@ -279,6 +282,8 @@ export default function AdminCategoriesPage() {
     try {
       const result = await deleteCategory(deletingCategoryId)
       if (result.success) {
+        // 分类缓存失效：前台编辑弹窗的分类下拉共享 30 秒缓存
+        invalidateAdminCategoriesCache()
         toast.success(t("deleteSuccess"), {
           description: t("deleteSuccessDesc"),
         })

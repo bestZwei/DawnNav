@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,7 +24,8 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MarkdownContent } from "@/components/markdown-content"
-import { createSite, updateSite, getAdminCategories, type ScreenshotInput } from "@/lib/actions"
+import { createSite, updateSite, type ScreenshotInput } from "@/lib/actions"
+import { fetchAdminCategoriesShared, type AdminCategory } from "@/lib/admin-categories"
 import { fetchPublicSettings } from "@/lib/client-settings"
 import { useTranslations } from "next-intl"
 import { resolveActionError } from "@/lib/action-error"
@@ -102,35 +103,57 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
     detailContent: "",
   })
 
-  // 加载分类列表与功能开关状态（仅挂载时执行；默认分类通过函数式更新读取最新表单值）
+  // 加载分类列表与功能开关状态。
+  // 分类懒加载：弹窗是每卡常挂载的，挂载时拉取会让管理员打开首页瞬间
+  // 产生数十个重复请求（且失败被静默吞掉、下拉永远为空）；改为首次
+  // open 时经模块级单飞加载器取数，全站共享同一次请求，失败可重试。
+  const [catStatus, setCatStatus] = useState<"idle" | "loading" | "ready" | "error">("idle")
+  const aliveRef = useRef(true)
   useEffect(() => {
-    let cancelled = false
-    async function loadCategories() {
-      const result = await getAdminCategories()
-      if (!cancelled && result.success && result.data) {
-        const list = result.data
-        setCategories(list)
-        if (list.length > 0) {
-          setFormData(prev =>
-            prev.categoryId ? prev : { ...prev, categoryId: list[0].id }
-          )
-        }
-      }
+    aliveRef.current = true
+    return () => {
+      aliveRef.current = false
     }
+  }, [])
+
+  const loadCategories = useCallback(async () => {
+    setCatStatus("loading")
+    try {
+      const list = await fetchAdminCategoriesShared()
+      if (!aliveRef.current) return
+      if (!list) {
+        setCatStatus("error")
+        return
+      }
+      setCategories(list)
+      // 空列表不能取 list[0]（工作区无分类），走 ready + 空态提示
+      if (list.length > 0) {
+        setFormData(prev =>
+          prev.categoryId ? prev : { ...prev, categoryId: list[0].id }
+        )
+      }
+      setCatStatus("ready")
+    } catch {
+      if (aliveRef.current) setCatStatus("error")
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open || catStatus !== "idle") return
+    loadCategories()
+  }, [open, catStatus, loadCategories])
+
+  useEffect(() => {
     async function loadFeatureFlag() {
       // 详情编辑区显隐跟随 site-detail 内置插件的启用状态
       const settings = await fetchPublicSettings()
-      if (!cancelled) {
+      if (aliveRef.current) {
         setEnableSiteDetail(
           settings.plugins?.builtinEnabledIds?.includes("site-detail") ?? false
         )
       }
     }
-    loadCategories()
     loadFeatureFlag()
-    return () => {
-      cancelled = true
-    }
   }, [])
 
   // 功能开启时检测上传能力（仅一次）
@@ -406,6 +429,8 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
                   formData={formData}
                   setFormData={setFormData}
                   categories={categories}
+                  catStatus={catStatus}
+                  onRetryCategories={loadCategories}
                 />
               </TabsContent>
 
@@ -450,6 +475,8 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
                   formData={formData}
                   setFormData={setFormData}
                   categories={categories}
+                  catStatus={catStatus}
+                  onRetryCategories={loadCategories}
                 />
               </div>
 
@@ -481,6 +508,8 @@ function BasicInfoFields({
   formData,
   setFormData,
   categories,
+  catStatus,
+  onRetryCategories,
 }: {
   formData: {
     name: string
@@ -503,6 +532,9 @@ function BasicInfoFields({
     detailContent: string
   }>>
   categories: Category[]
+  // 分类列表加载状态：error 时渲染错误行 + 重试按钮，loading 时禁用下拉
+  catStatus: "idle" | "loading" | "ready" | "error"
+  onRetryCategories: () => void
 }) {
   const t = useTranslations("admin.siteForm")
   return (
@@ -532,22 +564,44 @@ function BasicInfoFields({
 
       <div className="grid gap-2">
         <Label htmlFor="category">{t("categoryLabel")}</Label>
-        <Select
-          value={formData.categoryId}
-          onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t("categoryPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* 加载失败：显式报错 + 重试，替代原先的静默空下拉 */}
+        {catStatus === "error" ? (
+          <div className="flex items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+            <span className="text-xs text-destructive">{t("categoriesLoadError")}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={onRetryCategories}
+            >
+              {t("categoriesRetry")}
+            </Button>
+          </div>
+        ) : catStatus === "ready" && categories.length === 0 ? (
+          /* 空列表：工作区还没有任何分类，表单无法提交，给出明确指引 */
+          <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            {t("categoriesEmpty")}
+          </div>
+        ) : (
+          <Select
+            value={formData.categoryId}
+            onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+            required
+            disabled={catStatus === "loading"}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={catStatus === "loading" ? t("categoriesLoading") : t("categoryPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div className="grid gap-2">
